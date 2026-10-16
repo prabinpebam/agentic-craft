@@ -1,0 +1,14 @@
+{
+  "color": {
+    "text-muted": {
+      "$type": "color",
+      "$value": "{color.text}",
+      "$description": "More contrast: secondary text as strong as body text"
+    },
+    "rule": {
+      "$type": "color",
+      "$value": "{color.text-muted}",
+      "$description": "More contrast: stronger outlines"
+    }
+  }
+}

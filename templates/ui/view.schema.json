@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/prabinpebam/agentic-craft/templates/ui/view.schema.json",
+  "title": "View spec",
+  "description": "A screen described as data (agentic-craft, skills/design-system/references/ui-from-data.md): a layout and, for each of its regions, the items it shows. A renderer maps each item through the component registry. Extend $defs/item with the project's block types.",
+  "type": "object",
+  "required": ["layout", "regions"],
+  "additionalProperties": false,
+  "properties": {
+    "layout": { "type": "string", "description": "A layout in the library (landing, index, article, settings, manager…)" },
+    "title": { "type": "string", "description": "The document title" },
+    "regions": {
+      "type": "object",
+      "description": "The layout's named regions (slots), each an ordered list of items",
+      "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+    }
+  },
+  "$defs": {
+    "query": {
+      "type": "object",
+      "description": "Data the repository resolves before rendering, so components only see plain data",
+      "required": ["from"],
+      "properties": {
+        "from": { "type": "string", "description": "section, collection, search, setting…" },
+        "id": { "type": "string" },
+        "limit": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["type"],
+      "description": "One block or compound; its type names a registry entry",
+      "oneOf": [
+        { "properties": { "type": { "const": "hero" }, "title": { "type": "string" }, "standfirst": { "type": "string" }, "media": { "type": "string" } }, "required": ["type", "title"] },
+        { "properties": { "type": { "const": "heading" }, "level": { "enum": [2, 3, 4] }, "text": { "type": "string" } }, "required": ["type", "text"] },
+        { "properties": { "type": { "const": "text" }, "markdown": { "type": "string" } }, "required": ["type", "markdown"] },
+        { "properties": { "type": { "const": "image" }, "media": { "type": "string" }, "caption": { "type": "string" }, "width": { "enum": ["content", "popout", "wide", "full"] } }, "required": ["type", "media"] },
+        { "properties": { "type": { "const": "collection" }, "view": { "enum": ["list", "tiles", "grid"] }, "items": { "$ref": "#/$defs/query" } }, "required": ["type", "items"] },
+        { "properties": { "type": { "const": "form" }, "id": { "type": "string" } }, "required": ["type", "id"] }
+      ]
+    }
+  }
+}

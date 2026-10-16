@@ -1,0 +1,59 @@
+{
+  "color": {
+    "text": {
+      "$type": "color",
+      "$value": "{p.ink.50}",
+      "$description": "Body text on every surface"
+    },
+    "text-muted": {
+      "$type": "color",
+      "$value": "{p.ink.300}",
+      "$description": "Secondary text: hints, captions"
+    },
+    "bg": {
+      "$type": "color",
+      "$value": "{p.ink.900}",
+      "$description": "The page"
+    },
+    "bg-raised": {
+      "$type": "color",
+      "$value": "{p.ink.800}",
+      "$description": "Cards, fields, dialogs"
+    },
+    "rule": {
+      "$type": "color",
+      "$value": "{p.ink.500}",
+      "$description": "Rules and outlines"
+    },
+    "accent": {
+      "$type": "color",
+      "$value": "{p.indigo.300}",
+      "$description": "Primary actions and links"
+    },
+    "accent-hover": {
+      "$type": "color",
+      "$value": "{p.ink.50}",
+      "$description": "Primary actions, hovered or pressed"
+    },
+    "on-accent": {
+      "$type": "color",
+      "$value": "{p.ink.900}",
+      "$description": "Text on an accent fill"
+    },
+    "focus": {
+      "$type": "color",
+      "$value": "{p.indigo.300}",
+      "$description": "The focus ring"
+    },
+    "positive": {
+      "$type": "color",
+      "$value": "{p.green.400}",
+      "$description": "Success"
+    },
+    "negative": {
+      "$type": "color",
+      "$value": "{p.red.400}",
+      "$description": "Errors"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "agentic-craft",
+  "version": "0.1.0",
+  "description": "A project-agnostic harness for building products with AI agents: grounded specs, Definitions of Done, attended and unattended loops, performance, perceived performance, UI copy and data-driven design systems.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "bin": {
+    "agentic-craft-install": "tools/install.mjs",
+    "build-tokens": "tools/build-tokens.mjs",
+    "check-tokens": "tools/check-tokens.mjs",
+    "lint-styles": "tools/lint-styles.mjs",
+    "lint-copy": "tools/lint-copy.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/harness.test.mjs"
+  },
+  "repository": { "type": "git", "url": "https://github.com/prabinpebam/agentic-craft.git" }
+}

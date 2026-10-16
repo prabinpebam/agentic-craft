@@ -1,0 +1,29 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - name: The starter tokens build and pass their checks
+        run: |
+          node tools/check-tokens.mjs --src templates/tokens
+          node tools/build-tokens.mjs --src templates/tokens --css "$RUNNER_TEMP/tokens.css" --md "$RUNNER_TEMP/tokens.md"
+      - name: The installer works on an empty project
+        run: |
+          mkdir -p "$RUNNER_TEMP/project"
+          node tools/install.mjs "$RUNNER_TEMP/project" --for copilot,claude
+          test -f "$RUNNER_TEMP/project/.github/skills/craft/SKILL.md"
+          test -f "$RUNNER_TEMP/project/.claude/agents/throughput-reviewer.md"
+          grep -q "agentic-craft:start" "$RUNNER_TEMP/project/AGENTS.md"

@@ -1,0 +1,10 @@
+{
+  "layout": "index",
+  "title": "Work",
+  "regions": {
+    "header": [{ "type": "hero", "title": "Work", "standfirst": "Case studies from ten years of design." }],
+    "lead": [{ "type": "text", "markdown": "A few of the projects I'm proudest of, newest first." }],
+    "main": [{ "type": "collection", "view": "tiles", "items": { "from": "section", "id": "work" } }],
+    "aside": [{ "type": "form", "id": "contact" }]
+  }
+}

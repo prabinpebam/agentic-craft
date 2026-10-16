@@ -1,0 +1,29 @@
+{
+  "$comment": "How the token files combine (DTCG resolver): the base set, then one theme context, then modifiers. tools/build-tokens.mjs reads this.",
+  "sets": [
+    "tokens.json"
+  ],
+  "modifiers": {
+    "theme": {
+      "contexts": {
+        "light": [
+          "tokens.light.json"
+        ],
+        "dark": [
+          "tokens.dark.json"
+        ]
+      },
+      "default": "light"
+    },
+    "contrast": {
+      "contexts": {
+        "normal": [],
+        "more": [
+          "tokens.contrast-more.json"
+        ]
+      },
+      "default": "normal",
+      "media": "(prefers-contrast: more)"
+    }
+  }
+}
