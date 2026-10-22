@@ -60,9 +60,10 @@ Walk the chain top to bottom and report, with the fix for each:
 3. **Leaks:** UI words in user-can statements; implementation in promises; a decision made in the UI that belongs in the flow.
 4. **Untestable lines:** anything a Definition of Done row couldn't check.
 5. **Open decisions:** list them with options and a recommendation, and a working default so work isn't blocked (a decision table: #, question, options, recommendation, decided?).
+6. **Unexamined beliefs:** a high-impact assumption missing from the register, or the riskiest one with no criterion for confirming it (`assumptions`).
 
 When a request arrives as UI ("add a button that…"), climb the chain before building: which user-can statement does it serve, and which promise? If the answer is obvious, note it and build. If it isn't, it may be the wrong button.
 
 ## Writing it down
 
-The spec holds the chain, in this order, plus the architecture and the decisions. Keep a TL;DR at the top. Keep the spec current: an "As built" section records where the build differs and why. A template is in `templates/spec.md` of this harness.
+The spec holds the chain, in this order, plus the architecture, the assumptions register (`assumptions`) and the decisions. Keep a TL;DR at the top. Keep the spec current: an "As built" section records where the build differs and why. A template is in `templates/spec.md` of this harness.

@@ -1,5 +1,5 @@
 {
-  "$comment": "Performance budgets and targets (agentic-craft performance skill). budgets fail a build; targets are the plan's goals, reported not enforced; noise is the allowance a regression must exceed on both counts.",
+  "$comment": "Performance budgets and targets (agentic-craft performance skill). budgets fail a build; targets are the spec's goals, reported not enforced; noise is the allowance a regression must exceed on both counts.",
   "noise": {
     "time": { "relative": 0.2, "absoluteMs": 75 },
     "bytes": { "relative": 0.1, "absoluteKb": 10 },

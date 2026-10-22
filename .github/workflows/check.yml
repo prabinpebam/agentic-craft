@@ -25,5 +25,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/project"
           node tools/install.mjs "$RUNNER_TEMP/project" --for copilot,claude
           test -f "$RUNNER_TEMP/project/.github/skills/craft/SKILL.md"
-          test -f "$RUNNER_TEMP/project/.claude/agents/throughput-reviewer.md"
+          test -f "$RUNNER_TEMP/project/.github/skills/assumptions/SKILL.md"
+          test -f "$RUNNER_TEMP/project/.claude/agents/grounding-critic.md"
+          test ! -e "$RUNNER_TEMP/project/.github/skills/orchestrate"
           grep -q "agentic-craft:start" "$RUNNER_TEMP/project/AGENTS.md"

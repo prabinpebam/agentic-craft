@@ -13,7 +13,7 @@ A performance claim is a comparison: this run against a baseline, on the same ma
 2. **Metrics a person feels,** named once, each with a precise start and end (below).
 3. **Instrumentation that explains causes:** every server request timed to its last byte, with named spans for costly work, readable by the benchmark and in the browser's developer tools (`Server-Timing`).
 4. **A committed baseline** (`perf/baseline.json`) and a **check** that fails on a regression beyond its noise allowance.
-5. **Budgets** (enforced on every production build) and **targets** (the plan's goals, reported, not enforced; a met target becomes the baseline's floor).
+5. **Budgets** (enforced on every production build) and **targets** (the spec's goals, reported, not enforced; a met target becomes the baseline's floor).
 6. **Field data** from real use, so the lab isn't the only witness.
 
 ## Metrics
@@ -49,11 +49,11 @@ A starting `perf/budgets.json` is in `templates/perf-budgets.json` of this harne
 
 Report LCP, INP and CLS from real visits with buffered `PerformanceObserver`s, once per page, with `sendBeacon` when the page is hidden; numbers and ratings only, never an address or a title on anything private; off the critical path (load the reporter on idle); honour the visitor's opt-outs.
 
-## When to run what
+## What needs a measurement
 
-- **The benchmark:** after changes to the server, the data loader, image or media pipelines, a layout or a page's loading; before a release; and as the evidence for any performance claim.
-- **The budgets:** every production build (tier 3 for dependency or build changes).
-- **Never** for copy or docs changes.
+- **Benchmark evidence** (a comparison with the baseline): any claim that something is faster, and any change to the server, the data loader, image or media pipelines, a layout or a page's loading, before it counts as done.
+- **Budgets:** a property of every production build; one over budget isn't done, including after a dependency or build change.
+- **Neither** for copy or docs changes.
 
 ## Limits to state
 
@@ -61,4 +61,4 @@ Development isn't production (measure what people live with, and say which); one
 
 ## Changing performance
 
-1. Measure the baseline. 2. Find the cause with spans, not guesses. 3. Fix the biggest cause. 4. Measure again, same machine, and compare. 5. Record before and after in the plan's evidence. Change nothing visible for performance's sake without the owner's sign-off.
+1. Measure the baseline. 2. Find the cause with spans, not guesses. 3. Fix the biggest cause. 4. Measure again, same machine, and compare. 5. Record before and after as the evidence beside the Definition of Done row. Change nothing visible for performance's sake without the product owner's agreement.

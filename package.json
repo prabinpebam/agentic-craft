@@ -1,7 +1,7 @@
 {
   "name": "agentic-craft",
-  "version": "0.1.0",
-  "description": "A project-agnostic harness for building products with AI agents: grounded specs, Definitions of Done, attended and unattended loops, performance, perceived performance, UI copy and data-driven design systems.",
+  "version": "0.2.0",
+  "description": "A project-agnostic harness for product reasoning with AI agents: grounded specs from customer promise to UI, assumptions and risks, success criteria and Definitions of Done, UI copy, perceived performance, performance targets and data-driven design systems.",
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=20" },

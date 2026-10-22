@@ -4,16 +4,18 @@
  * Installs the agentic-craft harness into a project, or for every project on this computer, with no dependencies.
  *
  *   node tools/install.mjs <project folder> [--for copilot,claude,agents] [--templates <folder>] [--dry-run]
- *   node tools/install.mjs --global [--for copilot,claude]
+ *   node tools/install.mjs --global [--for copilot,claude,agents]
  *
  * - Skills go where each agent looks for them: GitHub Copilot `.github/skills/<name>/`, Claude Code
- *   `.claude/skills/<name>/`, any other agent `.agents/skills/<name>/` (and, with --global, `~/.copilot/skills`
- *   and `~/.claude/skills`).
+ *   `.claude/skills/<name>/`, Codex and other agents that read the open skills layout `.agents/skills/<name>/`
+ *   (with --global: `~/.copilot/skills`, `~/.claude/skills`, `~/.agents/skills`).
  * - Agents go to `.github/agents/<name>.agent.md` (Copilot) and `.claude/agents/<name>.md` (Claude Code).
  * - The project's AGENTS.md (and CLAUDE.md, when there is one) gets a section between markers, with the project
  *   facts the skills read, to fill in. Run again to update the skills; the section's filled-in facts are kept.
- * - --templates copies the spec, plan, glossary, budgets, progress-log and token starters into a folder.
- * Without --for it installs for Copilot, plus Claude Code when the project has .claude/ or CLAUDE.md.
+ * - --templates copies the spec, Definitions of Done, glossary, budgets, token and view starters into a folder,
+ *   keeping any file already there.
+ * Without --for it installs for Copilot, plus Claude Code when the project has .claude/ or CLAUDE.md, plus the
+ * open skills layout when the project has .agents/.
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -28,15 +30,13 @@ const END = '<!-- agentic-craft:end -->';
 export function section(/** @type {string | null} */ facts) {
   const defaultFacts = `### Project facts (fill in; the skills read these)
 
-- **Spec and plan:** <path to the spec> · <path to the plan with its Definitions of Done>
-- **Commands:** unit (related files) \`<…>\` · types \`<…>\` · one end-to-end test \`<…> -g "<title>"\` · full suites \`<…>\` · production build with budgets \`<…>\` · benchmark \`<…>\`
-- **Progress log:** <a path outside the repository>
-- **Branches and merges:** <work branch or worktree> · merge with \`<…>\` · deploy watched with \`<…>\` · must never break: <the live product, an API>
-- **Design system:** tokens \`<source folder>\`, built with \`<…>\` · components by tier \`<folders>\` · library at \`<address>\` · glossary \`<path>\``;
+- **Product artifacts:** <path to the spec, with its assumptions register> · <path to the Definitions of Done>
+- **Design system:** tokens \`<source folder>\`, built with \`<…>\` · components by tier \`<folders>\` · library at \`<address>\` · glossary \`<path>\`
+- **Performance:** benchmark \`<…>\` · baseline \`<path>\` · budgets \`<path>\``;
   return `${START}
 ## Craft (agentic-craft harness)
 
-This project uses the [agentic-craft](https://github.com/prabinpebam/agentic-craft) skills. Start with the \`craft\` skill; it routes to the rest: \`ground\` (promise → jobs → user-can → flows → UI), \`definition-of-done\`, \`orchestrate\` (attended and unattended modes, validation tiers), \`design-system\`, \`ui-copy\`, \`perceived-performance\`, \`performance\`. Agents: \`throughput-reviewer\` (every 30 minutes of running work), \`grounding-critic\`, \`design-system-auditor\`.
+This project uses the [agentic-craft](https://github.com/prabinpebam/agentic-craft) skills for product reasoning: what is worth building and what success means. Start with the \`craft\` skill; it routes to the rest: \`ground\` (promise → jobs → user-can → flows → UI), \`assumptions\`, \`definition-of-done\`, \`design-system\`, \`ui-copy\`, \`perceived-performance\`, \`performance\`. Agents: \`grounding-critic\`, \`design-system-auditor\`. These skills define product intent and success criteria; they don't prescribe how the work is carried out.
 
 ${facts ?? defaultFacts}
 ${END}`;
@@ -52,6 +52,28 @@ export function withSection(/** @type {string} */ text) {
     return text.slice(0, i) + section(facts) + text.slice(j + END.length);
   }
   return `${text.trimEnd()}${text.trim() ? '\n\n' : ''}${section(null)}\n`;
+}
+
+const factNames = (/** @type {string} */ text) => [...text.matchAll(/^- \*\*([^*]+):\*\*/gm)].map((m) => m[1]);
+
+/** When kept facts come from an earlier version: the facts this version reads that are missing, and the kept ones it doesn't read. */
+export function factsCheck(/** @type {string} */ text) {
+  const i = text.indexOf(START);
+  const j = text.indexOf(END);
+  if (i < 0 || j < i) return { missing: [], extra: [] };
+  const known = factNames(section(null));
+  const kept = factNames(text.slice(i, j));
+  const missing = known.filter((k) => !kept.includes(k));
+  return missing.length ? { missing, extra: kept.filter((k) => !known.includes(k)) } : { missing: [], extra: [] };
+}
+
+/** The agents to install for when --for isn't given. */
+export function defaultKinds(/** @type {string} */ root) {
+  return [
+    'copilot',
+    ...(existsSync(join(root, '.claude')) || existsSync(join(root, 'CLAUDE.md')) ? ['claude'] : []),
+    ...(existsSync(join(root, '.agents')) ? ['agents'] : []),
+  ];
 }
 
 const skills = () => readdirSync(join(HERE, 'skills'));
@@ -84,7 +106,7 @@ function main(argv) {
   const dry = argv.includes('--dry-run');
   const target = global ? homedir() : argv.find((a, i) => !a.startsWith('--') && !['--for', '--templates'].includes(argv[i - 1]));
   if (!target) {
-    console.error('Usage: node tools/install.mjs <project folder> [--for copilot,claude,agents] [--templates <folder>] [--dry-run] | --global');
+    console.error('Usage: node tools/install.mjs <project folder> [--for copilot,claude,agents] [--templates <folder>] [--dry-run] | --global [--for copilot,claude,agents]');
     return 2;
   }
   const root = resolve(target);
@@ -92,7 +114,8 @@ function main(argv) {
     console.error(`No folder at ${root}`);
     return 2;
   }
-  const kinds = (flag('--for') ?? ['copilot', ...(existsSync(join(root, '.claude')) || existsSync(join(root, 'CLAUDE.md')) ? ['claude'] : [])].join(',')).split(',').map((k) => k.trim()).filter(Boolean);
+  const given = flag('--for');
+  const kinds = given ? given.split(',').map((k) => k.trim()).filter(Boolean) : global ? ['copilot', 'claude'] : defaultKinds(root);
   const say = (/** @type {string} */ s) => console.log(`${dry ? '(dry run) ' : ''}${s}`);
   for (const c of plan(root, kinds, global)) {
     say(`copy ${c.to}`);
@@ -110,12 +133,14 @@ function main(argv) {
         say(`${before ? 'update' : 'create'} ${file} (the Craft section)`);
         if (!dry) writeFileSync(file, after);
       }
+      const { missing, extra } = factsCheck(after);
+      if (missing.length) say(`note: the Craft facts in ${file} come from an earlier version: add ${missing.join(', ')}${extra.length ? `; this version doesn't read ${extra.join(', ')}` : ''} (see "Upgrading" in the README)`);
     }
     const tpl = flag('--templates');
     if (tpl) {
       const to = resolve(root, tpl);
-      say(`copy templates to ${to}`);
-      if (!dry) cpSync(join(HERE, 'templates'), to, { recursive: true });
+      say(`copy templates to ${to} (files already there are kept)`);
+      if (!dry) cpSync(join(HERE, 'templates'), to, { recursive: true, force: false, errorOnExist: false });
     }
   }
   say(`installed ${skills().length} skills and ${agents().length} agents for ${kinds.join(', ')}${global ? ' (for every project on this computer)' : ''}`);

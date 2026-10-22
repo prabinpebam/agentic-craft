@@ -7,6 +7,8 @@
 > - **Who:** <the people and agents it serves>.
 > - **What a person can do:** <the three or four headline user-can statements>.
 > - **How:** <the architecture in one line>.
+> - **Riskiest assumption:** <A1, and the criterion that would confirm it>.
+> - **Success:** <the headline rows of the [Definitions of Done](definition-of-done.md)>.
 > - **Open:** <the decisions still to make, with their working defaults>.
 
 ## 1. The customer promise
@@ -65,12 +67,18 @@
 
 <New glossary terms; the words for every failure in the flows.>
 
-## 9. Decisions
+## 9. Assumptions and risks
+
+| # | Assumption or risk | Kind | Impact if wrong | Evidence today | Criterion | Cheapest check | Changes | Status |
+|---|---|---|---|---|---|---|---|---|
+| A1 | | Desirability · usability · feasibility · viability | High (P1) | None | | | | Open |
+
+## 10. Decisions
 
 | # | Question | Options | Recommendation | Decided |
 |---|---|---|---|---|
 | O1 | | | | Working default: … |
 
-## 10. As built
+## 11. As built
 
 <Where the build differs from this spec, and why. Updated in the same change as the code.>
