@@ -12,7 +12,7 @@ Read the spec (promise, jobs, user-can statements, flows, views, assumptions, de
 Report, each finding with its location and the exact fix:
 
 1. **Orphans:** a view, setting or behaviour with no user-can statement; a statement with no job; a job with no promise.
-2. **Gaps:** a promise no job tests; a job with no statement; a statement with no flow, no view, or no Definition of Done row; a flow without its failure branches, its waits (with their class) or its defaults.
+2. **Gaps:** a promise no job tests; a job with no statement; a statement with no flow, no view, or no Definition of Done row; a flow without its failure branches, its waits (with their class) or its defaults; a capability for one item with no answer for several or all (shared values, "Multiple values", a batch for slow or AI work).
 3. **Leaks:** UI words in user-can statements; implementation in promises; a decision made in the UI that belongs in a flow; a developer word shown to a person who hasn't chosen an advanced view.
 4. **Untestable lines:** a Definition of Done row or promise no test, command or measurement could check.
 5. **Unbounded decisions:** an open question without options, a recommendation and a working default.

@@ -38,6 +38,7 @@ Template:
 - **"A person can…"** statements: one capability each, testable, in product words, with no UI ("can undo the last change to a page", not "clicks the Undo button").
 - Numbered (U1, U2…), each naming the job(s) it serves. Each becomes at least one Definition of Done row (`definition-of-done`).
 - Include the negative capabilities that protect a promise ("can't publish a private page by accident").
+- **Scale each statement: one, several, all.** For a capability that acts on things a person has many of (pictures, pages, rows, files), write how it works on one, on a chosen several, and on all of them, or say why one is out of scope. Several is usually the job's main case, not an extra: whatever can be read, edited or generated for one item can be for a selection, where a value they share shows and one that differs says so ("Multiple values"), setting it applies to every one, and a slow or AI action runs as one batch the person can watch, stop and review before saving.
 
 ## 4. Task flows
 
@@ -58,7 +59,7 @@ Template:
 Walk the chain top to bottom and report, with the fix for each:
 
 1. **Orphans:** UI with no user-can statement; statements with no job; jobs with no promise.
-2. **Gaps:** promises no job tests; jobs with no statement; statements with no flow or no view; flows without failure branches or waits.
+2. **Gaps:** promises no job tests; jobs with no statement; statements with no flow or no view; flows without failure branches or waits; a capability offered for one item but not for several (or the reverse) with no reason given.
 3. **Leaks:** UI words in user-can statements; implementation in promises; a decision made in the UI that belongs in the flow.
 4. **Untestable lines:** anything a Definition of Done row couldn't check.
 5. **Open decisions:** list them with options and a recommendation, and a working default so work isn't blocked (a decision table: #, question, options, recommendation, decided?).
