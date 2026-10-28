@@ -18,6 +18,6 @@ Report, each finding with its location and the exact fix:
 5. **Unbounded decisions:** an open question without options, a recommendation and a working default.
 6. **Copy and waits:** a flow step without its words or its wait's pattern.
 7. **Unexamined beliefs:** a promise, flow or stage resting on a high-impact assumption that isn't in the register; the riskiest assumption without a criterion, a cheapest check, or the decision it changes.
-8. **Usability:** a flow or view that breaks one of Nielsen's ten heuristics (the `craft` skill's usability heuristics reference), named H1 to H10: no sign of status, no way out or undo, an automatic change saved without a choice, a second pattern for one job, an error with no way forward.
+8. **Usability:** a view that breaks one of Nielsen's ten heuristics (the `craft` skill's usability heuristics reference), named H1 to H10: no sign of status, no way out or undo, an automatic change saved without a choice, a second pattern for one job, an error with no way forward. The heuristics check the UI only: a missing job, statement or flow is a Gap (2), and a plan argued from heuristics instead of the chain is itself a finding.
 
 Output: findings ranked by how badly they'd break a promise, at most 15, then the three changes to make first.

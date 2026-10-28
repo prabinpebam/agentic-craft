@@ -10,7 +10,7 @@ It defines product intent; it doesn't prescribe how the work is carried out. For
 
 | Skill | Use it when | What it gives you |
 |---|---|---|
-| [`craft`](skills/craft/SKILL.md) | Starting any product or feature work; unsure which practice applies | The spine (promise → jobs → user-can → flows → UI), the eleven rules, Nielsen's ten [usability heuristics](skills/craft/references/usability-heuristics.md) as checks, and which skill to load when |
+| [`craft`](skills/craft/SKILL.md) | Starting any product or feature work; unsure which practice applies | the spine (promise → jobs → user-can → flows → UI) to plan with, the eleven rules, Nielsen's ten [usability heuristics](skills/craft/references/usability-heuristics.md) to design and check the UI, and which skill to load when |
 | [`ground`](skills/ground/SKILL.md) | Writing or critiquing a spec; a request jumps to UI | Customer promise, scenarios and jobs to be done, user-can statements, task flows, then views; a critique method |
 | [`assumptions`](skills/assumptions/SKILL.md) | A plan rests on unproven beliefs; deciding what to validate first | Desirability, usability, feasibility and viability assumptions and risks, ranked by impact and evidence, each with a criterion, the cheapest check and the decision it changes |
 | [`definition-of-done`](skills/definition-of-done/SKILL.md) | Defining success; deciding what "done" must prove | Project and stage Definitions of Done made from promises and user-can statements, observable rows with the evidence each needs, a "Try it", and an honest "against the promise" |
@@ -90,7 +90,7 @@ node tools/lint-copy.mjs src/components --glossary docs/glossary.md
 - **Assumptions named:** what the plan takes on faith is written down, ranked and given a test.
 - **Success means evidence:** a row in a table, with the proof it needs named in advance.
 - **Honest waits:** speed is felt; feedback is matched to the wait and never lies.
-- **Usable by design:** every flow and view is designed and reviewed against Nielsen's ten usability heuristics (H1 to H10), and the decisions they drive are written down.
+- **Usable by design:** what to build comes from the chain (promise, jobs, user-can statements, flows); the UI that serves it is designed and reviewed against Nielsen's ten usability heuristics (H1 to H10), and the decisions they drive are written down.
 - **Strict systems:** every value a token, every component in its tier and documented, every screen data.
 - **Portable artifacts:** Markdown and JSON with stable IDs any person, agent or tool can cite.
 

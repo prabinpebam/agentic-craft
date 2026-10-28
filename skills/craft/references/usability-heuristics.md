@@ -1,6 +1,8 @@
 # Usability heuristics
 
-Jakob Nielsen's ten usability heuristics (1994, revised 2020: [nngroup.com/articles/ten-usability-heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)) are the principles every flow and view is designed and reviewed against. They aren't a last polish. A flow is designed with them (`ground` §4), a view is assembled with them (`design-system`), its words follow them (`ui-copy`), and a Definition of Done names the evidence that each one that applies holds (`definition-of-done`).
+Jakob Nielsen's ten usability heuristics (1994, revised 2020: [nngroup.com/articles/ten-usability-heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)) are the principles UI is designed and reviewed against: the last link of the chain (`ground` §5). They aren't a last polish: a view is assembled with them (`design-system`), its words follow them (`ui-copy`), and a Definition of Done names the evidence that each one that applies holds (`definition-of-done`).
+
+They don't plan a feature. What to build, for whom, at what scale (one, several, all) and in what order comes from the promise, the jobs, the user-can statements and the flows (`ground` §1 to §4). A screen can pass all ten and still serve the wrong job; a missing job or statement is a gap in the chain, not a heuristic finding.
 
 Each heuristic below says what it asks, how it shows up in this practice, and what to look for when reviewing. Refer to them by number (H1 to H10) in specs, reviews and Definition of Done rows.
 
@@ -86,7 +88,7 @@ Each heuristic below says what it asks, how it shows up in this practice, and wh
 
 ## Using them
 
-- **Designing a flow:** for each step, note which heuristics are at stake and the decision each one drove. A spec's views can carry a "Heuristics" note, for example: H1, a busy sign on the button; H3, nothing saved until Accept.
+- **Designing a view** (after its user-can statements and flows are written): for each region and step on screen, note which heuristics are at stake and the decision each one drove. A spec's views can carry a "Heuristics" note, for example: H1, a busy sign on the button; H3, nothing saved until Accept.
 - **Reviewing a view or a change:** walk H1 to H10 and report each finding as `heuristic · where · what a person would experience · fix`. Order them by severity: blocks a task, slows or confuses it, cosmetic.
 - **Defining done:** a view's Definition of Done has rows for the heuristics that matter most to it, with observable evidence: an end-to-end test that the failure line names the fix, a screenshot of the busy state, a test that typing dismisses a suggestion. A heuristic review by a second reader counts as evidence only when its findings are recorded.
 - **When they conflict** (H7's shortcuts against H8's minimalism, H5's confirmations against H7's speed): decide for the promise the view serves, and write the decision down.
