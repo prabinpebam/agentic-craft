@@ -36,6 +36,7 @@ description: Use when defining what success means for a product, a feature or a 
 - **Traced:** names the user-can statement or promise it proves.
 - **Negative cases too:** what must not happen (no leak, no silent failure, nothing written outside the store).
 - **Budgets:** performance, size and accessibility rows have numbers.
+- **Usable:** a view's rows cover the [usability heuristics](../craft/references/usability-heuristics.md) that matter most to it, each with observable evidence: a test that a failure names its fix (H9), that nothing is saved until the person confirms (H3), a screenshot of the busy state (H1).
 - **Evidence named in advance:** the evidence column says what would prove the row before work starts. The result (which test, how many passed, which run, what was observed) is recorded beside it once it's known, by whoever does the work.
 
 ### Rows that depend on others

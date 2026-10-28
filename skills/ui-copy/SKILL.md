@@ -79,3 +79,5 @@ Review the rest by hand with the checklist.
 - [ ] No developer words before the person has chosen advanced views
 - [ ] Every icon, colour, sound or motion has a text twin; accessible names match labels
 - [ ] Read aloud: it sounds like a helpful person, not a system
+
+Copy carries four of the [usability heuristics](../craft/references/usability-heuristics.md) almost alone: the person's words (H2), errors that say how to recover (H9), hints and help in context (H10), and status in words (H1). Check them with the rest of the heuristics when the view is reviewed.

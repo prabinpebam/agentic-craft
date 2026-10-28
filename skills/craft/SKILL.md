@@ -1,6 +1,6 @@
 ---
 name: craft
-description: Use at the start of any product or feature work, and whenever unsure which product practice applies. The entry point to agentic-craft's product reasoning - the chain from customer promise to UI, the assumptions and risks to validate, success criteria and Definitions of Done, and the UX practices (data-driven design systems, UI copy, perceived performance, performance targets). Routes to the right skill and sets the order they apply in.
+description: Use at the start of any product or feature work, and whenever unsure which product practice applies. The entry point to agentic-craft's product reasoning - the chain from customer promise to UI, the assumptions and risks to validate, success criteria and Definitions of Done, and the UX practices (Nielsen's usability heuristics, data-driven design systems, UI copy, perceived performance, performance targets). Routes to the right skill and sets the order they apply in.
 ---
 
 # Craft: product reasoning
@@ -16,7 +16,7 @@ Customer promise  →  Scenarios / jobs to be done  →  User-can statements  �
        (why)               (when and for whom)            (what's possible)        (in what order)    (what it looks like)
 ```
 
-Each link is checked against the one above it (`ground`). The beliefs the chain rests on are listed and ranked (`assumptions`). Success is defined as rows with their evidence (`definition-of-done`). The experience is expressed through a design system (`design-system`), with copy that follows rules (`ui-copy`), waits that feel honest (`perceived-performance`) and targets that are measured (`performance`).
+Each link is checked against the one above it (`ground`). The beliefs the chain rests on are listed and ranked (`assumptions`). Success is defined as rows with their evidence (`definition-of-done`). The experience is expressed through a design system (`design-system`), with copy that follows rules (`ui-copy`), waits that feel honest (`perceived-performance`) and targets that are measured (`performance`). Flows and views are designed and reviewed against Nielsen's ten [usability heuristics](references/usability-heuristics.md) (H1 to H10).
 
 ## Which skill, when
 
@@ -29,8 +29,9 @@ Each link is checked against the one above it (`ground`). The beliefs the chain 
 | Write any words a person reads in the product | `ui-copy` |
 | Add something that makes a person wait (a save, a load, a sync) | `perceived-performance` |
 | Set performance targets or budgets, change loading or rendering, or judge a claim that something is faster | `performance` |
+| Design a flow or a view, or review one for usability | the [usability heuristics](references/usability-heuristics.md), with `ground` and `design-system` |
 
-Most changes need two or three of them: a new screen is `ground` (does it serve a promise?), `design-system` (made of what?), `ui-copy` (its words) and `perceived-performance` (its waits).
+Most changes need two or three of them: a new screen is `ground` (does it serve a promise?), `design-system` (made of what?), `ui-copy` (its words) and `perceived-performance` (its waits), each checked against the heuristics.
 
 ## Rules that hold everywhere
 
@@ -39,11 +40,12 @@ Most changes need two or three of them: a new screen is `ground` (does it serve 
 3. **Success means evidence.** Success is a row in a Definition of Done with the evidence that would prove it: a test, a measurement, an observation of a person, a screenshot looked at. Never "should work".
 4. **The spec is the source of truth.** When what was built differs from the spec, the spec's "As built" section says so, and a refuted assumption changes every link it touches.
 5. **Complete by definition.** A UI requirement includes light and dark, every state (rest, hover, active, focus, disabled, error, empty, loading), keyboard and screen reader, and small screens. They're part of what's asked for, not polish.
-6. **Never a silent wait, never a lie.** Every wait has a sign where it happens; "Saved" means saved.
-7. **Every value is a token; every component documents itself.** UI is assembled from a library, not hand-styled per page.
-8. **Copy is part of the design.** Words follow written rules and a glossary.
-9. **Measure before and after.** A performance claim without a baseline and a comparison isn't one.
-10. **Portable artifacts.** Plain Markdown and JSON with stable IDs (P1 promises, J1 jobs, U1 user-can statements, A1 assumptions, O1 decisions, PD1 and 1.1 Definition of Done rows), so people, other agents and other tools can cite them without rereading everything.
+6. **Usable by the ten heuristics.** Every flow and view is designed against Nielsen's [usability heuristics](references/usability-heuristics.md): visible status, the person's words, a way out, consistency, prevention before error messages, recognition over recall, accelerators, nothing extra, errors that say how to recover, and help in context. A review walks H1 to H10, and the decisions they drive are written in the spec.
+7. **Never a silent wait, never a lie.** Every wait has a sign where it happens; "Saved" means saved.
+8. **Every value is a token; every component documents itself.** UI is assembled from a library, not hand-styled per page.
+9. **Copy is part of the design.** Words follow written rules and a glossary.
+10. **Measure before and after.** A performance claim without a baseline and a comparison isn't one.
+11. **Portable artifacts.** Plain Markdown and JSON with stable IDs (P1 promises, J1 jobs, U1 user-can statements, A1 assumptions, O1 decisions, PD1 and 1.1 Definition of Done rows), so people, other agents and other tools can cite them without rereading everything.
 
 ## Where this stops
 

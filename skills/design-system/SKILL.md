@@ -77,3 +77,4 @@ The system is only as strict as its tests. A design-system test suite (see `refe
 2. Need a component? Check the library. None fits? Add it in the lowest tier that can hold it, with its doc comment, props and story.
 3. Need a screen? Express it as data for an existing layout. Only if none fits, add a layout.
 4. Check the anatomy in every context and state before showing anyone; run the design-system suite and the affected end-to-end tests.
+5. Walk the change through the ten [usability heuristics](../craft/references/usability-heuristics.md). A library makes several of them cheap: one component per job keeps things consistent (H4), states built into components show status (H1), and fields with their limits and hints prevent errors and give help in context (H5, H10).

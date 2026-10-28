@@ -44,12 +44,14 @@ Template:
 - For each user-can statement that has more than one step: the steps in order, as the person experiences them, with **every branch** (what if they're offline, already have one, cancel half-way, come back tomorrow, the service refuses).
 - Every wait gets its class (instant, responsive, waiting, long: `perceived-performance`). Every failure gets its words and a way forward (`ui-copy`).
 - Decide the defaults here: the fewest choices that get a person to the outcome, the rest deferred to later and reachable.
+- Walk each flow through the [usability heuristics](../craft/references/usability-heuristics.md): where the person sees what's happening (H1), how they back out or undo (H3), what stops a mistake before it happens (H5), and how each failure is recovered from (H9). Write the decisions they drive beside the steps.
 - An agent path, where agents are users: the same flow as commands with machine-readable output and exit codes that say "a person must act".
 
 ## 5. UI and views
 
 - Only now: screens, regions, components and their states, assembled from the design system (`design-system`). A view is data mapped to layouts and components, not a hand-made page.
 - Each view lists the user-can statements it serves. A view that serves none is removed; a statement no view serves is a gap.
+- Each view is checked against the heuristics too: the person's words and order (H2), the same pattern as elsewhere (H4), actions beside what they act on (H6), accelerators for frequent work (H7), nothing that doesn't serve the step (H8), and help in context (H10).
 
 ## Critiquing a spec (or a request)
 
@@ -61,6 +63,7 @@ Walk the chain top to bottom and report, with the fix for each:
 4. **Untestable lines:** anything a Definition of Done row couldn't check.
 5. **Open decisions:** list them with options and a recommendation, and a working default so work isn't blocked (a decision table: #, question, options, recommendation, decided?).
 6. **Unexamined beliefs:** a high-impact assumption missing from the register, or the riskiest one with no criterion for confirming it (`assumptions`).
+7. **Usability:** a flow or view that breaks one of the ten heuristics (no sign of status, no way out, an error with no way forward, a second pattern for the same job). Name the heuristic (H1 to H10).
 
 When a request arrives as UI ("add a button that…"), climb the chain before building: which user-can statement does it serve, and which promise? If the answer is obvious, note it and build. If it isn't, it may be the wrong button.
 

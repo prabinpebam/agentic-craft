@@ -57,6 +57,16 @@ test('project-agnostic: no project, person or machine names in skills, agents, t
   }
 });
 
+test('the usability heuristics: all ten, in order, and every UX skill and reviewer applies them', () => {
+  const ref = readFileSync(join(ROOT, 'skills', 'craft', 'references', 'usability-heuristics.md'), 'utf8');
+  const heads = [...ref.matchAll(/^## H(\d+)\. (.+)$/gm)].map((m) => Number(m[1]));
+  assert.deepEqual(heads, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  for (const s of ['craft', 'ground', 'design-system', 'definition-of-done', 'ui-copy'])
+    assert.match(readFileSync(join(ROOT, 'skills', s, 'SKILL.md'), 'utf8'), /usability-heuristics\.md/, `${s} links the heuristics`);
+  for (const a of ['design-system-auditor', 'grounding-critic'])
+    assert.match(readFileSync(join(ROOT, 'agents', `${a}.agent.md`), 'utf8'), /H1 to H10/, `${a} reviews against the heuristics`);
+});
+
 test('relative links in the markdown resolve', () => {
   for (const f of walk(ROOT).filter((x) => x.endsWith('.md'))) {
     for (const m of readFileSync(f, 'utf8').matchAll(/\]\((?!https?:|#|mailto:)([^)\s]+)\)/g)) {

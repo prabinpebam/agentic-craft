@@ -49,9 +49,9 @@
 
 ## 5. Views
 
-| View | Layout | Serves | Regions and data |
-|---|---|---|---|
-| | | U1, U2 | |
+| View | Layout | Serves | Regions and data | Heuristics |
+|---|---|---|---|---|
+| | | U1, U2 | | H1 busy sign on the action · H3 nothing saved until confirmed |
 
 ## 6. Architecture
 
