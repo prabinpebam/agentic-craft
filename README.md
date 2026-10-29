@@ -47,7 +47,7 @@ Clone it once, then install into any project:
 
 ```sh
 git clone https://github.com/prabinpebam/agentic-craft.git
-node agentic-craft/tools/install.mjs path/to/your-project
+node agentic-craft/tools/install.mjs path/to/your-project --for copilot
 ```
 
 That copies the skills to `.github/skills/` (and `.claude/skills/` when the project uses Claude Code), the agents beside them, and adds a **Craft** section to the project's `AGENTS.md` with the project facts the skills read: where the spec, its assumptions and the Definitions of Done live, the design system's folders, and the performance baseline and budgets. Fill those in. Run it again any time to update; your filled-in facts are kept, and other sections of `AGENTS.md` are left alone.
@@ -56,12 +56,39 @@ Options:
 
 ```sh
 node tools/install.mjs <project> --for copilot,claude,agents   # choose the agents (agents = .agents/skills, read by Codex)
-node tools/install.mjs <project> --templates docs/craft         # also copy the templates (files already there are kept)
-node tools/install.mjs <project> --dry-run                      # show what it would do
+node tools/install.mjs <project> --for copilot --templates docs/craft # keep existing templates
+node tools/install.mjs <project> --for copilot --dry-run --json       # show the complete plan
 node tools/install.mjs --global --for copilot,claude,agents     # for every project on this computer (~/.copilot, ~/.claude, ~/.agents)
 ```
 
-Without `--for`, it installs for Copilot, plus Claude Code when the project has `.claude/` or `CLAUDE.md`, plus the open skills layout when it has `.agents/`; with `--global`, for Copilot and Claude Code. The installer never deletes files; remove retired skills yourself.
+Noninteractive commands must specify `--for`. In a terminal, the existing target
+detection remains available. `claude-code` maps to `claude`; `codex` and `cursor`
+map to `agents`. These are layout mappings, not claims of discovery testing.
+
+### Installer contract (unreleased)
+
+`--dry-run --json` returns one object with `status`, a complete `plan`, `written`,
+`changed` and `next`. The plan declares file hashes, prior hashes, effects and no
+network use; it creates no files. `--approve-plan <plan.digest>` refuses a changed
+plan. `--uninstall` reverses only the files this kit recorded and never touches a
+file it did not record, such as a later `CLAUDE.md`. Where a file also holds owner
+text or another kit's marked section, uninstall removes only this kit's section and
+leaves the rest byte for byte. Use the same
+scope and template arguments. Exit codes are 0 (done), 1 (error), 2 (decision needed).
+
+Original bytes and owned directories are recorded in `.kit-state/agentic-craft.json`.
+Repeated installation is a no-op; filled project facts and existing templates stay.
+Modified managed files block update or uninstall, even with `--yes`; no force flag
+silently discards them. Resolve the edits or keep the current installation.
+Untracked files are never recursively removed. The installer rejects traversal,
+links, hard links and malformed section markers, and rolls back caught write failures.
+Preserve `.kit-stage-*` originals if a recovery error names them; power-loss recovery
+is manual. Do not edit the ownership record to force removal.
+
+The dependency-free contract engine is vendored in each independently usable kit;
+its identical copies are checked by the distributor's tests. It has no cross-kit
+runtime dependency. `node --test test/install-contract.test.mjs` exercises this
+repository's real installer in disposable project folders.
 
 ## Use
 

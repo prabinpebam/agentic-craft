@@ -17,10 +17,11 @@
  * Without --for it installs for Copilot, plus Claude Code when the project has .claude/ or CLAUDE.md, plus the
  * open skills layout when the project has .agents/.
  */
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { argumentsFor, copyTree, prepare, finish, output, safe } from './install-contract.mjs';
 
 const HERE = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const START = '<!-- agentic-craft:start -->';
@@ -97,55 +98,31 @@ export function plan(/** @type {string} */ target, /** @type {string[]} */ kinds
   return copies;
 }
 
-function main(argv) {
-  const flag = (/** @type {string} */ k) => {
-    const i = argv.indexOf(k);
-    return i >= 0 ? argv[i + 1] : undefined;
-  };
-  const global = argv.includes('--global');
-  const dry = argv.includes('--dry-run');
-  const target = global ? homedir() : argv.find((a, i) => !a.startsWith('--') && !['--for', '--templates'].includes(argv[i - 1]));
-  if (!target) {
-    console.error('Usage: node tools/install.mjs <project folder> [--for copilot,claude,agents] [--templates <folder>] [--dry-run] | --global [--for copilot,claude,agents]');
-    return 2;
+export function contract(argv) {
+  const o = argumentsFor(argv, ['logical-root']);
+  if (!o.target && !o.global) throw Object.assign(new Error('Choose a project folder or --global.'), { code: 2 });
+  const root = resolve(o.global ? homedir() : o.target);
+  if (!o.kinds.length) {
+    if (o.json || !process.stdin.isTTY) throw Object.assign(new Error('Choose --for copilot,claude,agents explicitly.'), { code: 2 });
+    o.kinds = defaultKinds(root);
   }
-  const root = resolve(target);
-  if (!existsSync(root)) {
-    console.error(`No folder at ${root}`);
-    return 2;
+  const entries = [];
+  for (const c of plan(root, o.kinds, o.global)) {
+    const to = c.to.slice(root.length + 1).replaceAll('\\', '/');
+    const from = c.from.slice(HERE.length + 1).replaceAll('\\', '/');
+    if (from.startsWith('skills/')) entries.push(...copyTree(HERE, from, to));
+    else entries.push({ path: to, bytes: readFileSync(c.from) });
   }
-  const given = flag('--for');
-  const kinds = given ? given.split(',').map((k) => k.trim()).filter(Boolean) : global ? ['copilot', 'claude'] : defaultKinds(root);
-  const say = (/** @type {string} */ s) => console.log(`${dry ? '(dry run) ' : ''}${s}`);
-  for (const c of plan(root, kinds, global)) {
-    say(`copy ${c.to}`);
-    if (!dry) {
-      mkdirSync(dirname(c.to), { recursive: true });
-      cpSync(c.from, c.to, { recursive: true });
-    }
+  if (!o.global) {
+    for (const name of ['AGENTS.md', ...(existsSync(join(root, 'CLAUDE.md')) ? ['CLAUDE.md'] : [])]) entries.push({ path: name, section: { start: START, end: END, transform: withSection } });
+    if (o.templates) { safe(root, o.templates); entries.push(...copyTree(HERE, 'templates', o.templates, 'keep')); }
   }
-  if (!global) {
-    for (const name of ['AGENTS.md', ...(existsSync(join(root, 'CLAUDE.md')) ? ['CLAUDE.md'] : [])]) {
-      const file = join(root, name);
-      const before = existsSync(file) ? readFileSync(file, 'utf8') : '';
-      const after = withSection(before);
-      if (after !== before) {
-        say(`${before ? 'update' : 'create'} ${file} (the Craft section)`);
-        if (!dry) writeFileSync(file, after);
-      }
-      const { missing, extra } = factsCheck(after);
-      if (missing.length) say(`note: the Craft facts in ${file} come from an earlier version: add ${missing.join(', ')}${extra.length ? `; this version doesn't read ${extra.join(', ')}` : ''} (see "Upgrading" in the README)`);
-    }
-    const tpl = flag('--templates');
-    if (tpl) {
-      const to = resolve(root, tpl);
-      say(`copy templates to ${to} (files already there are kept)`);
-      if (!dry) cpSync(join(HERE, 'templates'), to, { recursive: true, force: false, errorOnExist: false });
-    }
-  }
-  say(`installed ${skills().length} skills and ${agents().length} agents for ${kinds.join(', ')}${global ? ' (for every project on this computer)' : ''}`);
-  if (!global) say('next: fill in the "Project facts" in AGENTS.md');
-  return 0;
+  const allowed = (p) => ['AGENTS.md', 'CLAUDE.md'].includes(p) && !o.global
+    || ['.github', '.copilot', '.claude', '.agents'].some((d) => p.startsWith(`${d}/skills/`) && skills().some((s) => p.startsWith(`${d}/skills/${s}/`))
+      || p.startsWith(`${d}/agents/`) && agents().some((a) => p === `${d}/agents/${d === '.claude' ? a.replace('.agent.md', '.md') : a}`))
+    || !!o.templates && p.startsWith(`${o.templates}/`);
+  const result = finish(prepare({ id: 'agentic-craft', root, entries, allowed, uninstall: o.uninstall, effects: ['writes-project-files'], settings: { kinds: o.kinds, global: !!o.global, templates: o.templates ?? null } }), o, 'Fill in Project facts in AGENTS.md.');
+  if (!o.json && result.status === 'ok') console.log(`${o['dry-run'] ? 'planned' : o.uninstall ? 'removed' : 'installed'} ${skills().length} skills and ${agents().length} agents for ${o.kinds.join(', ')}`);
+  return result;
 }
-
-if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('install.mjs')) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = output(() => contract(process.argv.slice(2)), process.argv.slice(2));
