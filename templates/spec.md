@@ -68,6 +68,8 @@
 | Change | Scope | Pending · confirmed · failed | Recovery |
 |---|---|---|---|
 | | field | commit border, locked · tick, 200 ms minimum · error below, value kept | Retry · Revert |
+| | component | spinner in the switch's box, 200 ms minimum · new value · stored value, error icon | Retry |
+| | view | shimmer skeleton after 300 ms · content swaps in · error in place, or the empty state | Retry |
 
 ## 8. Copy
 

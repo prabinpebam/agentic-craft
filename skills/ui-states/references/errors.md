@@ -33,7 +33,7 @@ Technical detail (codes, paths, the raw response, the failing step) goes behind 
 |---|---|---|
 | **Retry** | The cause may be passing (network, a busy service, a lock) | Runs the same action again with the same input; a success clears the message |
 | **Undo** | A change completed and its effect was unwanted | Restores the earlier state and confirms it |
-| **Revert** | A save failed and the person wants the stored value back | Puts the stored value into the control; their attempt is offered to copy first if it was long |
+| **Revert** | A save failed and the person wants the last confirmed value back | Puts the last confirmed value into the control; their attempt is offered to copy first if it was long |
 | **Edit** | The input caused it (invalid, too large, a duplicate name) | Focuses the field, with the reason beside it |
 | **Details** | Always available for a system failure | Shows the technical record, copyable |
 | **Report** | The failure is a defect, not the person's input | Opens a prepared report with the technical record; nothing private is sent without the person seeing and agreeing |
@@ -51,6 +51,15 @@ Technical detail (codes, paths, the raw response, the failing step) goes behind 
 - A form keeps every value through a failed submit; a dialog doesn't close on failure.
 - Work in progress is kept locally before it's sent, so a crash or a closed window can offer it back.
 - A refresh or a conflict never replaces what the person is typing (`perceived-performance`).
+- Leaving a view, switching item or closing the window while a commit is pending or a change is unsynced either finishes it in the background or warns, naming what isn't saved yet; it never drops it silently.
+
+## Concurrency and ordering
+
+- **One commit in flight per control.** The control is locked while its commit is pending, so it can't send a second. A control that must accept rapid changes (a slider dragged again, a stepper) sends only the latest value once the pending one ends.
+- **The newest value wins.** Each commit carries an order (a counter or a version); a response for an older commit never overwrites a newer value on screen, and a failure of an older commit is ignored once a newer one has confirmed.
+- **Roll back to the last confirmed value,** not to the value before the person's first edit and not to the attempted one.
+- **Optimistic rollback** puts the item back where it was, marked with the reason and Retry, and is announced; a rollback is never silent.
+- **Someone else's change** (another person, another window, a sync) never overwrites what the person is editing: it waits until the edit ends, or becomes a conflict (below).
 
 ## The other outcomes
 
@@ -58,7 +67,7 @@ Technical detail (codes, paths, the raw response, the failing step) goes behind 
 
 **Partial success.** Say both counts in one line ("18 of 20 imported. 2 couldn't be"), keep what succeeded, mark each failure in place with its reason, and offer Retry for the failures only. It's a hard-dismiss pill or a section message bar, never a success tick.
 
-**Offline.** A banner at the scope it affects (usually the app's, but not blocking) says what still works and what happens to changes ("Offline. Changes are kept on this device and sync when you're back"). Changes made offline show a distinct "saved on this device" state, not the green tick, which means stored where it's going. When the connection returns, the queued changes sync with their own progress and the banner goes.
+**Offline.** A banner at the scope it affects (usually the app's, but not blocking) says what still works and what happens to changes ("Offline. Changes are kept on this device and sync when you're back"). Changes made offline show a distinct "saved on this device" state, not the green tick, which means stored where it's going. Queued changes are kept in order, survive a restart, and show a count where the product keeps tasks ("3 changes waiting to sync"). When the connection returns, they sync in order with their own progress and the banner goes; one that now fails or conflicts is marked where it lives, with its recovery, and the rest carry on.
 
 **Conflict.** Something else changed the same thing first. Never overwrite either version silently. Keep the person's version, show what differs, and offer Keep mine, Take theirs, or Compare (and Keep both where the data allows). The conflict stays marked until resolved.
 

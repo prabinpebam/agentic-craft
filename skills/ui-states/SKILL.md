@@ -1,172 +1,142 @@
 ---
 name: ui-states
-description: Use when adding or changing anything whose value can change (a field, a switch, a choice, a slider, a save button, a list action, an upload, a long operation) or anything that can fail. Decides where a loading, saving, success or error state lives (app, view, section, component or field), how each component shows pending, confirmed and failed, the timing (every committed change confirmed for at least 200 ms, even when instant), subtle step and percentage progress, shimmer skeletons for views and sections, the bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most), the error model - scoped, transparent, never losing input, always with a way to recover - and empty states, kept in the content's own wrapper at its minimum size, saying why it's empty and what to do.
+description: Use when adding or changing anything whose value can change, that loads, that can fail or that can be empty - a field, a switch, a choice, a slider, a save button, a list or bulk action, drag to reorder, an upload, a long operation, a toast or snackbar, a spinner or skeleton, an error message, an empty list. Decides where each loading, saving, success, error and empty state lives (app, view, section, component or field), what it looks like, its timing and what it announces - every committed change confirmed for at least 200 ms, shimmer skeletons for views and sections, one bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most), errors that keep input and always offer a recovery, and empty states in the content's own wrapper that say why and what to do.
 ---
 
 # UI states: every change confirmed, every failure recoverable
 
-A person who changes something must see that it took. Rename a project in settings and see nothing happen, and they go looking for a Save button that isn't there. Every value that can change has a pending, a confirmed and a failed state, shown on the thing that changed, and every failure says what happened and offers a way back.
+A person who changes something must see that it took. Rename a project in settings and see nothing happen, and they go looking for a Save button that isn't there. Every value that can change has a pending, a confirmed and a failed state, shown on the thing that changed; every failure says what happened and offers a way back; every container that can be empty says why.
 
-## Where this sits
-
-| Skill | Owns |
-|---|---|
-| `perceived-performance` | How long a wait is (its class), the patterns for loads and redraws (skeletons, stale while updating), never blocking input, the one status line |
-| **`ui-states`** (this) | Where a state lives (its scope), what each component looks like pending, confirmed and failed, the 200 ms confirmation, step and percentage progress, shimmer loading for views and sections, the notification pill, errors and recovery, empty states |
-| `ui-copy` | The words in every state |
-| `design-system` | The states built into components, their timing and colour as tokens |
+This file is the contract; the detail is in the references: [components](references/components.md), [errors](references/errors.md), [notification pill](references/notification-pill.md), [shimmer loading](references/shimmer.md), [empty states](references/empty-states.md), [focus, announcements and motion](references/accessibility.md), [enforcement](references/enforcement.md), and [sources and trade-offs](references/sources.md). The wait's class, the load patterns and the status line belong to `perceived-performance`; the words to `ui-copy`; the components and their tokens to `design-system`.
 
 ## The rules
 
-These hold even where common guidance differs; the trade-offs are recorded in [sources](references/sources.md#where-these-rules-differ-from-common-guidance).
+These hold even where common guidance differs; each trade-off is in [sources](references/sources.md#where-these-rules-differ-from-common-guidance).
 
-1. **Every committed change is confirmed where it happened.** A component whose value can change has pending, confirmed and failed states built in. The confirmation is on the component, not only in a status line or a notification.
-2. **Confirmation shows for at least 200 ms, even when the save is instant.** A change that lands in 5 ms still plays its pending and confirmed states for 200 ms. A slower save keeps the pending state until it ends. The beat is deliberate and always the same, so it reads as "done", never as flicker.
+1. **Every committed change is confirmed where it happened.** A component whose value can change has pending, confirmed and failed states built in, on the component, not only in a status line or a notification.
+2. **Confirmation shows for at least 200 ms, even when the save is instant.** Pending shows at once and holds at least 200 ms (or until a slower save ends); then the confirmed state holds at least 200 ms. The beat is deliberate and always the same, so it reads as "done", never as flicker.
 3. **Scope the state to the smallest independent unit.** Lock and show only what the change affects and what a concurrent edit could corrupt. Everything else stays usable. Blocking the whole app is extremely rare and needs a written reason.
-4. **Show what's happening: steps, and a percentage when it's known.** People mind not knowing more than waiting. Step text is subtle (small, secondary, beside the work), never prominent, and the more granular and rapidly changing it is, the better. Technical step names are welcome there.
+4. **Show what's happening: steps, and a percentage when it's known.** Step text is subtle (small, secondary, beside the work), never prominent; the more granular and rapidly changing, the better. Technical step names are welcome there.
 5. **One notification pill, at the bottom.** For outcomes that aren't visible where the person is. It's auto-dismiss or hard-dismiss, one line normally and at most three in exceptional cases.
 6. **Errors are scoped like loading, transparent, and always recoverable.** Each error shows at the scope it affects, says what happened, why, what was kept and what to do, and offers at least one recovery action. Input is never lost.
-7. **Be true.** "Saved" means stored where it's going. An optimistic state is allowed only when a failure puts it back and says so (`perceived-performance`).
-8. **Empty is never left empty.** An empty state fills the same wrapper the content uses, at that wrapper's defined minimum width and height, so the layout holds. It always says something relevant: why it's empty and what to do to see the content, or a light, quirky message if there's nothing else to say. A subtle silhouette of the expected content is one way to show it.
+7. **Be true.** "Saved" and the green tick mean stored where it's going. An optimistic state is allowed only when a failure puts it back and says so.
+8. **Empty is never left empty.** An empty state fills the same wrapper the content uses, at that wrapper's defined minimum width and height, so the layout holds. It always says why it's empty and what to do to see the content, or a light, quirky message if there's nothing else to say. A subtle silhouette of the expected content is one way to show it.
+
+## How to apply it
+
+For every element that can change, load, fail or be empty:
+
+1. **Name the event:** a *commit* (the person changed a value), a *load* (data arriving), an *operation* (long or multi-step work), an *outcome* away from where the person is, or *empty*.
+2. **Choose the scope** (below): the smallest unit the event affects and a concurrent edit could corrupt.
+3. **Choose the pattern:** the component's states ([components](references/components.md)); for a load, a shimmer skeleton for a view or section of known shape, a spinner at component or field scope; for an outcome away from view, the pill.
+4. **Apply the timing track** (below) through the tokens.
+5. **Design failure, empty and recovery at the same scope** ([errors](references/errors.md), [empty states](references/empty-states.md)).
+6. **Write the words and the announcements:** the copy slots, the focus rule and the live region (below).
 
 ## Choosing the scope
 
-Ask two questions of every change: **what does it affect** (its blast radius), and **can another edit, made before it lands, corrupt it or be corrupted by it?** Start at the smallest scope and widen only for a real conflict.
+Ask of every change: **what does it affect**, and **can another edit, made before it lands, corrupt it or be corrupted by it?** Start at the smallest scope; widen only for a real conflict.
 
 | Scope | Use when | Locked while pending | Where the state shows |
 |---|---|---|---|
 | **Field** | One value saved on its own (a name, a URL, a number) | That field | Its border, its trailing slot, the line below it |
 | **Component** | One control's value (a switch, a choice group, a slider, a row's action) | That control (a radio or segmented group as one) | The control itself, in its own box |
-| **Section** | Values that must be valid or saved together (an address, a form with a Save button, a connected pair) | The section's inputs and its action | The section's action and a message bar at its top |
-| **View** | The view's data is being replaced (opening, refreshing, switching the item shown) | Nothing the person is using; content swaps when ready (`perceived-performance`) | The view's content area; its header and navigation stay live |
+| **Section** | Values that must be valid or saved together (a form with a Save button) | The section's inputs and its action | The section's action and a message bar at its top |
+| **View** | The view's data is being replaced (opening, refreshing, switching item) | Nothing the person is using; content swaps when ready | The view's content area; header and navigation stay live |
 | **App** | The ground under everything changes (switching account or data store, restoring a backup, migrating data) | Everything, with a reason | A full-window state with steps and a percentage |
 
-- **Lock only what conflicts.** A save button locks its section's fields, because an edit during the save would be lost or ambiguous. Toggling one switch locks that switch, not its neighbours.
-- **App-level blocking needs a written reason** in the spec, naming the corruption it prevents. "It was easier" isn't one.
-- **Background work has no visible scope.** It shows in the place the product keeps tasks (if any) and ends in a notification pill.
+- **Lock only what conflicts, only while pending.** A Save button locks its section's fields; toggling one switch locks that switch, not its neighbours. The lock ends when the confirmed state begins.
+- **Never lock continuous text.** A document or long text that autosaves while the person types is never locked and gets no tick per save; its state is the status line's ([components](references/components.md#document-and-long-text-autosave)).
+- **App-level blocking needs a written reason** in the spec, naming the corruption it prevents.
+- **Background work has no visible scope.** It shows where the product keeps tasks (if any) and ends in a notification pill.
 
-## Timing
+## Timing: one model, three tracks
 
-| Moment | Rule |
-|---|---|
-| Acknowledge | Within 100 ms the control shows its pending state (`perceived-performance`) |
-| A committed change (field, switch, choice, slider, save button) | Pending at once, no delay; pending and confirmed together last **at least 200 ms**; a slower save stays pending until it ends, then confirms |
-| A load or redraw (a view, a region, a list) | `perceived-performance`'s delay: no indicator for the first 300 ms, then at least 500 ms once shown |
-| Words in a confirmation | A label that changes to words ("Saved") holds long enough to read, about 1.5 s; a tick alone may go after 200 ms |
-| Steps | Show step text for any operation with two or more stages or likely to pass 1 s; update it as often as the work moves |
-| Percentage | Show it when the total is known (bytes, items, steps); show both steps and percentage when both are known; never a fake percentage |
-| Slow | Past 10 s with no progress, say it's taking longer than usual and offer to cancel or keep waiting |
-| Notification pill | About 6 s for one line, 8 s for two or three; paused on hover, on keyboard focus and while the window is in the background |
+| Track | For | Starts | Holds | Ends |
+|---|---|---|---|---|
+| **Commit** | A value the person changed: field, switch, choice, slider, Save button, row action | Pending in the next frame, no delay | Pending at least `duration.confirm-min` (200 ms), or until a slower save ends; steps past 1 s; past 10 s, say it's taking longer and offer Cancel or keep waiting | Confirmed, fully shown, at least `duration.confirm-min`; a label in words ("Saved") about `duration.confirm-read` (1.5 s); failed until resolved |
+| **Load** | Data arriving: a view, a section, a list, a region | Nothing for `duration.indicator-delay` (300 ms); content that beats it is drawn directly | At least `duration.indicator-min` (500 ms) once shown; a shimmer of `count.shimmer-passes` × `duration.shimmer` (3 × 1.5 s), then still; past 10 s, say so | The content, the empty state or the error at that scope; at its timeout, the error |
+| **Outcome** | The notification pill | When the outcome is known | Auto-dismiss: `duration.notice` (6 s) for one line, `duration.notice-long` (8 s) for two or three, paused on hover, focus and while the window is in the background; hard-dismiss: until closed or resolved | Removed, or updated in place by a newer message on the same subject |
 
-Timings are tokens (`duration.confirm-min`, `duration.indicator-delay`, `duration.indicator-min`, `duration.shimmer`, `duration.notice`, and the count `count.shimmer-passes`), never literals in components.
+- **Two channels, two clocks.** The changed control's own state never waits; the product's status line ("Saving…", `perceived-performance`) keeps the load delay. A commit that also redraws a region runs both: the control on the commit track, the region on the load track.
+- **Within 100 ms** every action shows something (`perceived-performance`); the commit track's next-frame pending meets it.
+- **Percentages only from a real total** (bytes, items, steps); show both steps and a percentage when both are known; never a fake one.
+- **Arrow keys never commit on each press:** a radio group, a closed select and a slider commit when focus leaves or after `duration.commit-pause` (500 ms) without a key.
+- Timings are tokens, never literals in components.
 
-## Shimmer (skeleton) loading for views and sections
-
-A view or section whose content has a known shape loads as a skeleton: placeholder shapes in the real layout with a soft light passing across them. Full detail: [shimmer loading](references/shimmer.md).
-
-- **Which indicator:** a shimmer skeleton for views and sections with a known shape; a spinner at component or field scope, or when the shape can't be known; a progress bar or steps for long operations; nothing when content beats the delay.
-- **The real wrapper and layout:** the same wrapper and minimum size as the content and its empty state, the known headings and toolbars real, placeholders shaped like the content (lines at varied widths, tiles, avatars). No layout shift when it arrives.
-- **Timing:** no skeleton for the first 300 ms, at least 500 ms once shown; one pass of about 1.5 s, a few passes (about 3), then the placeholders stand still, keeping motion under 5 s. Past 10 s, say so; at its timeout, become the error at that scope. Never shimmer forever.
-- **Progressive:** each section swaps in complete when its own data is ready; a refresh keeps the old content until the new is ready instead of showing a skeleton again.
-- **Motion:** a transform-only highlight in the reading direction, colours and timings as tokens; with reduced motion, no shimmer (static placeholders); in forced colours, plain system-colour shapes.
-- **Accessibility:** `aria-busy="true"` on the region, every placeholder `aria-hidden`, one status in words said once.
+**Decisions and trade-offs.** Pending and confirmed each hold the 200 ms beat, rather than sharing it: under a shared beat a switch's spinner could show for a frame, which is the flicker the rule exists to stop, and a switch's spinner must hold at least 200 ms. The cost is about 400 ms of feedback for an instant save; the lock covers only the pending half. The commit track skips the 300 ms load delay because the person just acted and is looking at the control; loads keep it.
 
 ## States by component
 
-Every component whose value can change has these states; the [component reference](references/components.md) has the full detail.
+These patterns are fixed; the [component reference](references/components.md) extends them to every control (explicit-save fields, radio and segmented groups, selects, comboboxes and async search, date pickers, sliders, list and bulk actions, drag to reorder, uploads, document autosave, destructive actions).
 
 | Component | Pending | Confirmed | Failed |
 |---|---|---|---|
-| **Text field, blur-commit** | The border takes the commit colour; the field is momentarily disabled; a small spinner in the trailing slot when the save outlasts the beat | A green tick in a circle animates in on the right, inside the field | Error border and icon; the person's value kept; a message below with Retry and Revert |
-| **Text field, explicit save** | Its section's Save button is pending; the fields are locked | The button shows a tick and "Saved"; each changed field shows its tick | The section's message bar and each failing field's message; values kept |
-| **Switch, checkbox** | A spinner replaces the control in its own box | The control shows the new value | It shows the stored value again, with an error icon and a Retry |
-| **Radio, segmented control** | A spinner in the chosen option; the group is locked | The selection moves to the chosen option | The selection stays on the stored option, with an error and a Retry |
-| **Select, dropdown** | Like the text field: commit border, locked, the trailing slot spins | The tick in the trailing slot | Like the text field |
-| **Slider** | Echoes while dragging; on release, the value label spins and the slider locks | A tick beside the value | The thumb returns to the stored value, with an error and a Retry |
-| **Button, call to action** | A spinner in place of its icon, the label in the present tense, its width fixed, disabled | A tick and the past tense | Back to rest, with the error at the section's scope |
-| **List or row action** | The row's action slot spins; the row's other actions lock | The row shows the result; a pill only if it left the view (with Undo) | The row is restored and marked, with its reason and a Retry |
-| **File, upload** | Each file's row: progress, percentage, steps, Cancel | Each row's tick | The failed row stays, with its reason, Retry and Remove; the rest carry on |
-| **Long, multi-step operation** | Subtle step text that changes as each step runs, a percentage when known, Cancel | A tick in place, or a pill if the person has moved on | The failing step named, what completed kept, Retry from that step |
+| **Text field, blur-commit** | The border takes the commit colour; the field is momentarily disabled (`aria-disabled`); a small spinner in the trailing slot if the save outlasts the beat | A green tick in a circle animates in on the right, inside the field | Error border and icon; the person's value kept; a message below with Retry and Revert |
+| **Switch, checkbox** | A spinner replaces the switch in its own box, at least 200 ms; the same focusable element stays, locked | The control shows the new value | The stored value again, an error icon and Retry |
+| **Button, call to action** | A spinner in place of its icon, the label in the present tense ("Saving…"), its width fixed, locked | A tick and the past tense ("Saved") | Back to rest; the error at the section's scope |
+| **Long, multi-step operation** | Subtle step text that changes as each step runs, a percentage when known, Cancel | A tick in place, or a pill if the person moved on | The failing step named, what completed kept, Retry from that step |
 
-**Explicit save or save on change.** Save each value on its own (blur-commit) when it stands alone and is easy to change back. Use an explicit Save when values must be valid together, a change is costly, slow, sensitive or seen by others, or a draft needs review. Never mix the two in one section.
+**Explicit save or save on change.** Save a value on its own (blur-commit) when it stands alone and is easy to change back. Use an explicit Save when values must be valid together, or a change is costly, slow, sensitive, seen by others or needs review. Never mix the two in one section.
+
+**One commit in flight per control.** A control is locked while its commit is pending, so it can't send a second; across controls, a later response never overwrites a newer value, and a failure rolls back to the last confirmed value, not to the value before the person's first edit ([errors](references/errors.md#concurrency-and-ordering)).
+
+## Loading: shimmer for views and sections
+
+[Shimmer (skeleton) loading for views and sections](references/shimmer.md): placeholders in the real layout with a soft light passing across them.
+
+- **Which indicator:** a shimmer skeleton for views and sections whose shape is known, in the real wrapper and layout (no layout shift); a spinner at component or field scope, or when the shape can't be known; steps or a progress bar for long operations.
+- **Timing:** no skeleton for the first 300 ms, at least 500 ms once shown; about three passes, then still; at its timeout, the error at that scope. Never shimmer forever.
+- **Progressive:** each section swaps in complete when its own data is ready; a refresh keeps the old content.
+- **Motion and access:** with reduced motion, no shimmer; `aria-busy="true"` on the region, placeholders `aria-hidden`, one status said once.
 
 ## The notification pill
 
-One global pill at the bottom of the window, for outcomes not visible where the person is: background work finished, a change that left the view, an undo window, a failure with no visible home. Never for a field's save (its tick says it) or a validation error (it belongs on the field). Full spec: [notification pill](references/notification-pill.md).
+One global pill at the bottom of the window, for outcomes not visible where the person is: background work finished, a change that left the view (with Undo), a failure with no visible home, a partial success. Never for a field's save (its tick says it) or a validation error (it belongs on the field). [Full spec](references/notification-pill.md).
 
-- **Auto-dismiss** for information the person can do without, and for actions also reachable elsewhere (Undo is also a shortcut or in history).
-- **Hard-dismiss** for errors, warnings that need a decision, partial success, and any message whose action exists nowhere else. It stays until closed or resolved.
-- **One line normally; at most three** for the exceptional case (a partial success, an error's reason). Longer goes behind Details.
-- **One at a time per subject:** a new message about the same subject updates the pill in place; hard-dismiss pills stack (at most three visible, then a count).
+- **Auto-dismiss** for information the person can do without, whose action is also reachable elsewhere; **hard-dismiss** for errors, warnings that need a decision, partial success and any action that exists nowhere else.
+- **One line normally; at most three.** Longer goes behind Details.
+- **Several at once:** a message on the same subject updates its pill in place; repeats coalesce with a count; at most three visible, the rest queued with errors first; an auto-dismiss timer starts only when its pill is visible.
 
 ## Errors and recovery
 
-Errors follow the same scopes as loading. Each one is **transparent** (what happened, why if known, what was kept, what to do) and **recoverable** (at least one action: Retry, Undo, Revert, Edit, Details, Report, Reconnect, or Keep mine and Take theirs). Input is never lost. The [error model](references/errors.md) covers presentation by scope, recovery actions, and the success, partial-success, offline, conflict and cancelled states.
+Errors follow the same scopes as loading: **transparent** (what happened, why if known, what was kept, what to do) and **recoverable** (Retry, Undo, Revert, Edit, Reconnect, Keep mine or Take theirs; Details alongside). Input is never lost: through a failed save, a retry, a conflict, a closed window or going offline. The [error model](references/errors.md) covers each scope, concurrency, and the partial-success, offline, conflict, cancelled and slow states.
 
 ## Empty states
 
-Empty states shouldn't just be left empty: a bare space breaks the layout meant for the populated content, and leaves the person asking whether it's loading, broken or done. Full detail: [empty states](references/empty-states.md).
+A bare space breaks the layout meant for the content and leaves the person asking whether it's loading, broken or done. Rule 8 holds at every scope down to a table cell; the [kinds and scopes](references/empty-states.md) set the tone (playful only for first use, cleared and all done) and the action. A silhouette is static, faint and decorative, never a shimmer; an unknown state (loading, failed) is never shown as "No items".
 
-- **Same wrapper, same size.** The empty state renders inside the wrapper the content uses (the card, the panel, the list, the table frame), at the wrapper's own minimum width and height tokens. Nothing collapses, and nothing shifts when content arrives.
-- **Always say something relevant:** why it's empty, what to do to see the expected content (one call to action when there's one), or a light, quirky message if there's nothing else to say.
-- **Silhouette, not skeleton.** A subtle silhouette of the expected content is welcome: static, low-contrast, and paired with words. A loading skeleton is solid, shimmers for a few passes, and carries only a status about the wait. Never let one pass for the other.
+## Focus and announcements
 
-| Kind | Why it's empty | What it shows | Tone |
-|---|---|---|---|
-| **First use** | Nothing created yet | What will appear here, a silhouette, the one action that creates the first item | Welcoming; playful is fine |
-| **Cleared by the person** | They removed, archived or finished everything | That it's clear, and where the items went (archive, trash, with Undo while it lasts) | Light; playful is fine |
-| **No results** | A search or filter matched nothing | The query and filters that caused it, Clear filters or Edit search, suggestions | Plain, never playful |
-| **No access** | The person can't see this | Why, and how to get access (Request access, Switch account) | Plain, never playful |
-| **Offline or failed to load** | It couldn't be fetched | An error at this scope ([error model](references/errors.md)): what happened, what was kept, Retry | Plain, never playful |
-| **All done** | Zero is the goal (inbox zero, no alerts, all checks passed) | A success: what was achieved, when it was last checked, nothing to do | Celebratory, briefly |
+[Full detail](references/accessibility.md).
 
-Each scope gets its own size: the app's first run, a view, a section or card, a component such as a menu or a picker, and a list or table cell ("No due date"). Smaller scopes say less: a cell holds a dash or a few words, never an illustration.
-
-## Accessibility and motion
-
-- **Busy regions:** `aria-busy="true"` on the scope being updated, only that scope, only while pending.
-- **Momentary lock keeps focus:** lock with `aria-disabled="true"` and ignore input, never with `disabled`, which drops keyboard focus.
-- **Announcements:** one polite live region (`role="status"`) for confirmations and progress; announce the start and the end, not each step. `role="alert"` only for an error that needs attention away from focus. Field errors are tied with `aria-invalid` and `aria-describedby`. A live region exists before its text changes (WCAG 4.1.3).
-- **Not colour alone:** the commit colour has the tick or spinner as its twin, the error colour an icon and words (1.4.1); borders, ticks and icons reach 3:1 contrast (1.4.11).
-- **Timing adjustable:** auto-dismiss pauses on hover, focus and window blur; nothing essential lives only in an auto-dismissing pill; the product offers a way to keep notifications until dismissed (2.2.1).
-- **Reduced motion:** the tick appears without drawing itself, the pill fades rather than slides, and a spinner slows or becomes a static busy icon with text. The 200 ms minimum still holds; step text still changes.
-- **No layout shift:** a spinner, tick or icon takes the box of what it replaces; a button keeps its width.
+- **Focus stays where the person put it.** A lock never moves it: the same element stays, locked with `aria-disabled`, never `disabled` or unmounted. A blur-commit's result never pulls focus back. Focus moves only when its element goes (a removed row: the next row, else the previous, else the empty state's action) or after an explicit save fails (the section's message bar or the first failing field).
+- **Announce outcomes, not every step:** one polite live region (`role="status"`) for confirmations ("Project name saved", coalesced) and the start and end of loads and operations; `role="alert"` only for a failure the person must know now and that isn't where their focus is. Step text is not live.
+- **Not colour alone:** the tick and the spinner are the commit colour's twins; the tick's text twin is the announcement; the error colour has an icon and words; all reach 3:1.
+- **Reduced motion changes motion, not timing:** the beats hold; nothing draws, slides or shimmers.
 
 ## Copy
 
-The words follow `ui-copy`. The slots: pending in the present tense ("Saving…"), confirmed in the past ("Saved"), step text as the step's own name ("Resolving references… · Writing 3 of 12…", technical words welcome in this subtle line only), errors as what happened, why, what was kept and the action ("Couldn't save the name. You're offline; your text is kept. Retry"), pills as one fact and one optional action.
+The words follow `ui-copy`: pending in the present tense ("Saving…"), confirmed in the past ("Saved"), step text as the step's own name (technical words welcome in this subtle line only), errors as what happened, why, what was kept and the action, pills as one fact and one optional action.
 
 ## Making it enforceable
 
-Write tests for the mechanical rules, at the level the project already tests components:
-
-- every component whose value can change has stories or fixtures for pending, confirmed and failed, in light, dark and more contrast;
-- with a save that resolves at once, the confirmed state is visible for at least `duration.confirm-min`;
-- with a save that fails, the input keeps the person's value and a recovery action is focusable;
-- a lock uses `aria-disabled`, and focus stays on the locked control;
-- notification pills: error and partial-success variants never auto-dismiss, text is clamped to three lines, the timer pauses on hover and focus;
-- no full-window blocking state outside a written list of app-scope operations;
-- every container that can be empty has an empty fixture rendered in its own wrapper, at least the wrapper's minimum size, with words and no shimmer, and its first content arrives with no layout shift;
-- every view or section that loads data has a loading fixture: placeholders in its own wrapper, `aria-busy` on the region, placeholders `aria-hidden`, a finite shimmer (iteration count from the token, none under reduced motion), and a timeout that ends in the error state.
+Test the mechanical rules ([the checks](references/enforcement.md)): the beats with an instant save, the focused element kept through pending, out-of-order responses, the pill's dismissal and queue, empty and loading fixtures in their own wrappers, and no full-window block outside a written list.
 
 ## Review checklist
 
 - [ ] Every value that can change has pending, confirmed and failed states on the component itself
-- [ ] Confirmation lasts at least 200 ms, even for an instant save; nothing flickers
-- [ ] The scope is the smallest independent unit; any app-level block has a written reason
+- [ ] Pending holds at least 200 ms and confirmed at least 200 ms, even for an instant save; the lock ends when confirmed begins
+- [ ] The scope is the smallest independent unit; continuous text is never locked; any app-level block has a written reason
 - [ ] Field: commit-colour border, momentary lock, green tick in a circle animating in on the right
-- [ ] Switch and checkbox: a spinner replaces the control momentarily
-- [ ] Steps or a percentage wherever known; the step line subtle and live
-- [ ] Notification pill at the bottom: the right dismissal, one line (three at most), never the only home of something essential
+- [ ] Switch and checkbox: a spinner replaces the control for at least 200 ms, focus kept on the same element
+- [ ] Steps or a percentage wherever known; the step line subtle and not live
+- [ ] One commit in flight per control; a late response never overwrites a newer value
+- [ ] Pill at the bottom: the right dismissal, one line (three at most), queued past three, never the only home of something essential
 - [ ] Every error scoped, transparent, with at least one recovery action; input kept
-- [ ] Success, partial success, offline, conflict and cancelled states designed, not left to chance
-- [ ] Focus kept through locks; one polite live region; reduced motion honoured
-- [ ] Every empty state sits in the content's own wrapper at its minimum size; nothing shifts when content arrives
-- [ ] Every empty state says why it's empty and what to do, with at most one primary action; playful only for first use, cleared and all done
-- [ ] A silhouette is static and subtle, hidden from screen readers; a loading skeleton is solid and shimmers briefly; never confused
-- [ ] Views and sections with a known shape load as a shimmer skeleton in the real wrapper and layout; spinners only at component or field scope
-- [ ] The shimmer shows after 300 ms, stays at least 500 ms, passes a few times (under 5 s of motion) then stands still; none with reduced motion
-- [ ] The loading region is `aria-busy`, its placeholders hidden, one status said once; each section swaps in complete when ready
-- [ ] A skeleton never stays forever: past 10 s it says so, at its timeout it becomes the error
+- [ ] Partial success, offline, conflict, cancelled and slow states designed
+- [ ] Focus and announcements follow the table; reduced motion keeps the beats and drops the motion
+- [ ] Views and sections of known shape load as a shimmer skeleton in the real wrapper, after 300 ms, at least 500 ms, a few passes then still, never forever
+- [ ] Every empty state sits in the content's own wrapper at its minimum size and says why and what to do; playful only for first use, cleared and all done; a silhouette never shimmers
 
 Status that's visible (H1), errors that say how to recover (H9) and preventing errors (H5) are the [usability heuristics](../craft/references/usability-heuristics.md) this skill carries most; check them with the rest when the view is reviewed.

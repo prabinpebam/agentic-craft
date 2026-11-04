@@ -22,7 +22,7 @@ After Nielsen's response-time limits (0.1 s, 1 s, 10 s) and the Doherty threshol
 
 ## Principles, in order when they conflict
 
-1. **Never block input, never lose it.** Typing is echoed locally, never by a round trip. A refresh never replaces a field, text or a selection in use; if it would, it waits and says why. The one lock allowed is `ui-states`' momentary lock of a control whose edit has just been committed, with focus kept.
+1. **Never block input, never lose it.** Typing is echoed locally, never by a round trip. A refresh never replaces a field, text or a selection in use; if it would, it waits and says why. The one lock allowed is `ui-states`' momentary lock of a control whose edit has just been committed, with focus kept; continuous text is never locked.
 2. **Acknowledge within 100 ms.** Every action changes something visible at once (the pressed control, the selection, a placeholder). That acknowledgement stands in for a slower result.
 3. **Keep the old view until the new one is ready.** Never blank a region or a page to redraw it; swap when the new content is complete (double-buffering); mark the old one as updating only past 300 ms.
 4. **Say what's happening in one place, and show it where it happens.** One status line is the source of truth for saving, updating, background work and failures; the thing being worked on shows its own sign too (a busy button, a pending row, a region updating). Nothing works without a visible sign.
@@ -40,8 +40,8 @@ After Nielsen's response-time limits (0.1 s, 1 s, 10 s) and the Doherty threshol
 | Optimistic placeholder | A structural change (add, move, delete) | Shown at once; the real redraw replaces it in place; a refusal puts it back and says why |
 | Stale while updating | A region redrawn after a change elsewhere | Old content stays; dimmed and "Updating…" only after 300 ms; new content swaps in complete |
 | Double-buffered view | A heavy view must be redrawn | Built hidden, swapped when ready; scroll and selection carried over |
-| Skeleton | Opening a view that takes over 1 s | Chrome at once; regions as skeletons in their real layout; content streams in. Its shape, shimmer, timing and accessibility: `ui-states`; an empty state's static silhouette never shimmers |
-| Media placeholder | A picture not loaded yet | Its exact box (no layout shift), a shimmer (still under reduced motion), fade in; never a broken icon |
+| Skeleton | Opening a view or section whose content isn't there within the 300 ms delay | Chrome at once; regions as skeletons in their real layout; content streams in. Its shape, shimmer, timing and accessibility: `ui-states`; an empty state's static silhouette never shimmers |
+| Media placeholder | A picture not loaded yet | Its exact box (no layout shift), a finite shimmer (static under reduced motion), fade in; never a broken icon |
 | Named wait | 1–10 s of known work | "Preparing 118 pictures…", elapsed time after 3 s |
 | Background task | Over 10 s, or work they needn't watch | A task with steps ("Checking · Committing · Pushing") and elapsed time; the screen stays usable; it ends in a notification pill (`ui-states`) |
 | First-start notice | The first view after a cold start | A plain page at once saying what's being prepared, then the view |
@@ -51,7 +51,7 @@ After Nielsen's response-time limits (0.1 s, 1 s, 10 s) and the Doherty threshol
 
 - **Declare the class** of every new wait, and use its pattern.
 - **One task tracker** behind every wait: start a task naming the element it affects; the element shows its sign through a data attribute (`data-busy="ack|on|done|failed"`), styled by its own component; timings are tokens (the 300 ms delay, the 500 ms minimum once shown, elapsed after 3 s, and `ui-states`' 200 ms confirmation).
-- **Delay load indicators 300 ms; keep them at least 500 ms once shown**, so nothing flickers. A committed change isn't delayed: its control shows pending at once and confirms for at least 200 ms (`ui-states`).
+- **Delay load indicators 300 ms; keep them at least 500 ms once shown**, so nothing flickers. A committed change isn't delayed: its control shows pending at once for at least 200 ms, then confirmed for at least 200 ms (`ui-states`); the status line still waits 300 ms.
 - **Redraw only what a change affects** (named regions), from data or a fragment, never the whole view.
 - **Never reload a view while the person is typing in it;** never move focus as a side effect.
 - **Measure every wait** (`performance.measure`) with a target in the benchmark's budgets (`performance`).

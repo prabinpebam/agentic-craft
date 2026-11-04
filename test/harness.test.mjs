@@ -47,7 +47,7 @@ test('the craft skill routes to every other skill, and every skill it names exis
 });
 
 test('project-agnostic: no project, person or machine names in skills, agents, templates or tools', () => {
-  const BANNED = /\b(atiya|chopper|little planet|cozy life|personal-site|pebam)\b|[A-Z]:\\{1,2}Projects|\/Users\/[a-z]+\//i;
+  const BANNED = /\b(atiya|chopper|little planet|cozy life|personal-site|pebam|focus[ -]notes)\b|[A-Z]:\\{1,2}Projects|\/Users\/[a-z]+\//i;
   const files = ['skills', 'agents', 'templates', 'tools'].flatMap((d) => walk(join(ROOT, d)));
   for (const f of files) {
     const text = readFileSync(f, 'utf8').replace(/https:\/\/github\.com\/prabinpebam\/agentic-craft[\w/.-]*/g, '');
@@ -84,13 +84,66 @@ test('ui-states keeps its fixed rules, its references, and its neighbours point 
   const shimmer = readFileSync(join(dir, 'references', 'shimmer.md'), 'utf8');
   for (const part of ['## When to use which indicator', '## Shape: the real wrapper, the real layout', '## Timing', '## Progressive swap', '## Animation', '## Accessibility', '## Skeleton versus empty-state silhouette', 'error model', 'WCAG 2.2.2', 'aria-hidden'])
     assert.ok(shimmer.includes(part), `shimmer covers ${part}`);
-  for (const r of ['components.md', 'notification-pill.md', 'errors.md', 'empty-states.md', 'shimmer.md', 'sources.md']) assert.ok(existsSync(join(dir, 'references', r)), `references/${r}`);
+  for (const r of ['components.md', 'notification-pill.md', 'errors.md', 'empty-states.md', 'shimmer.md', 'accessibility.md', 'enforcement.md', 'sources.md']) assert.ok(existsSync(join(dir, 'references', r)), `references/${r}`);
   for (const s of ['perceived-performance', 'ui-copy']) assert.match(readFileSync(join(ROOT, 'skills', s, 'SKILL.md'), 'utf8'), /`ui-states`/, `${s} points to ui-states`);
   assert.match(readFileSync(join(ROOT, 'agents', 'design-system-auditor.agent.md'), 'utf8'), /`ui-states`/);
   const tokens = JSON.parse(readFileSync(join(ROOT, 'templates', 'tokens', 'tokens.json'), 'utf8'));
   assert.deepEqual(tokens.duration['confirm-min'].$value, { value: 200, unit: 'ms' });
   assert.deepEqual(tokens.duration.shimmer.$value, { value: 1500, unit: 'ms' });
   assert.ok(tokens.count['shimmer-passes'].$value * tokens.duration.shimmer.$value.value < 5000, 'shimmer motion stays under 5 s');
+});
+
+test('ui-states has one coherent timing model, matching its tokens and perceived-performance', () => {
+  const dir = join(ROOT, 'skills', 'ui-states');
+  const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
+  const perf = readFileSync(join(ROOT, 'skills', 'perceived-performance', 'SKILL.md'), 'utf8');
+  const tokens = JSON.parse(readFileSync(join(ROOT, 'templates', 'tokens', 'tokens.json'), 'utf8'));
+  const ms = (t) => (typeof t.$value === 'number' ? t.$value : t.$value.unit === 's' ? t.$value.value * 1000 : t.$value.value);
+  // Pending and confirmed each hold the beat; the old shared-beat wording must not come back anywhere.
+  assert.match(skill, /Pending shows at once and holds at least 200 ms/);
+  assert.match(skill, /confirmed state holds at least 200 ms/);
+  const texts = [...walk(join(ROOT, 'skills')), join(ROOT, 'templates', 'tokens', 'tokens.json')].filter((f) => /\.(md|json)$/.test(f));
+  for (const f of texts) assert.doesNotMatch(readFileSync(f, 'utf8'), /pending and confirmed (states )?(together|last together)/i, `${relative(ROOT, f)} uses the shared-beat wording`);
+  // Every token the skill and its references name exists, and any value written beside it equals the token.
+  for (const f of [join(dir, 'SKILL.md'), ...walk(join(dir, 'references'))]) {
+    for (const m of readFileSync(f, 'utf8').matchAll(/`(duration|count)\.([a-z-]+)`(?: \((\d+(?:\.\d+)?) ?(ms|s)\b)?/g)) {
+      const t = tokens[m[1]]?.[m[2]];
+      assert.ok(t, `${relative(ROOT, f)} names ${m[1]}.${m[2]}, which isn't a token`);
+      if (m[3]) assert.equal(Number(m[3]) * (m[4] === 's' ? 1000 : 1), ms(t), `${relative(ROOT, f)}: ${m[1]}.${m[2]} is written as ${m[3]} ${m[4]}`);
+    }
+  }
+  assert.equal(ms(tokens.duration['indicator-delay']), 300);
+  assert.equal(ms(tokens.duration['indicator-min']), 500);
+  for (const [text, name] of [[skill, 'ui-states'], [perf, 'perceived-performance']]) {
+    assert.match(text, /300 ms/, `${name} states the load delay`);
+    assert.match(text, /500 ms/, `${name} states the load minimum`);
+  }
+  assert.doesNotMatch(perf, /Skeleton \| Opening a view that takes over 1 s/, 'perceived-performance shows skeletons on the 300 ms delay, like ui-states');
+  assert.ok(ms(tokens.duration['confirm-min']) < ms(tokens.duration['indicator-delay']), 'the commit beat is shorter than the load delay');
+  assert.ok(ms(tokens.duration['confirm-read']) > ms(tokens.duration['confirm-min']), 'words hold longer than the beat');
+  assert.ok(ms(tokens.duration['notice-long']) > ms(tokens.duration.notice), 'longer pills stay longer');
+  // One state attribute vocabulary across the kit.
+  const busy = new Set(texts.flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/data-busy="([^"]+)"/g)].map((m) => m[1])));
+  assert.deepEqual([...busy], ['ack|on|done|failed'], 'one data-busy vocabulary');
+});
+
+test('ui-states covers focus, announcements, concurrency and every control, and stays lean', () => {
+  const dir = join(ROOT, 'skills', 'ui-states');
+  const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
+  const read = (r) => readFileSync(join(dir, 'references', r), 'utf8');
+  for (const part of ['## How to apply it', '## Choosing the scope', '## Timing: one model, three tracks', '## Focus and announcements', '## Review checklist', 'Decisions and trade-offs', 'Never lock continuous text', 'never `disabled` or unmounted', 'One commit in flight per control', '`role="alert"` only for a failure'])
+    assert.ok(skill.includes(part), `SKILL.md has ${part}`);
+  for (const part of ['## Combobox and async search', '## Date and time pickers', '## Drag and reorder', '## Multi-select and bulk actions', '## Destructive actions', '## Document and long-text autosave', 'The same element throughout', 'Decisions and trade-offs'])
+    assert.ok(read('components.md').includes(part), `components covers ${part}`);
+  for (const part of ['## Concurrency and ordering', 'The newest value wins', 'last confirmed value', 'never drops it silently'])
+    assert.ok(read('errors.md').includes(part), `errors covers ${part}`);
+  for (const part of ['Several at once', 'starts only when it becomes visible', 'Decisions and trade-offs', 'WCAG 2.2.1'])
+    assert.ok(read('notification-pill.md').includes(part), `the pill covers ${part}`);
+  for (const part of ['## After each kind of change', '## Live regions', '## Locks never drop focus', '## Not colour alone', '## Motion', 'changes motion, not timing'])
+    assert.ok(read('accessibility.md').includes(part), `accessibility covers ${part}`);
+  assert.match(read('enforcement.md'), /out of order/);
+  assert.ok(skill.length <= 18000, `SKILL.md stays lean (${skill.length} characters); move detail to references`);
+  for (const r of ['accessibility.md', 'enforcement.md']) assert.ok(skill.includes(`references/${r}`), `SKILL.md links ${r}`);
 });
 
 test('relative links in the markdown resolve', () => {

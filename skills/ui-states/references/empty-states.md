@@ -22,7 +22,7 @@ A silhouette is optional, one way to show what's expected; the message isn't opt
 |---|---|---|---|
 | **First use, never populated** | What will appear here and what it's for; a silhouette of the first items | The one action that creates or imports the first item; a secondary "Learn how" link at most | Yes: welcoming and light |
 | **Cleared by the person** | That it's clear, and where the items went (archive, trash) | Undo while the window lasts; Open archive | Yes: a brief, quirky line is fine |
-| **No results from a search or filter** | The query and the active filters, named ("No notes match "budget" in Archived") | Clear filters, Edit search, Search everywhere; suggestions for near matches | No: plain and useful |
+| **No results from a search or filter** | The query and the active filters, named ("No projects match "budget" in Archived") | Clear filters, Edit search, Search everywhere; suggestions for near matches | No: plain and useful |
 | **No permission or access** | That it exists but isn't visible to this person, why when known, and who controls access | Request access, Switch account, Go back | No |
 | **Offline or failed to load** | An error at this scope ([error model](errors.md)): what happened, what was kept (cached items shown if any), what still works | Retry, Reconnect, Details | No; and never shown as "empty", which would be a lie |
 | **All done, zero as success** | The achievement ("All caught up", "No problems found"), with when it was last checked | None needed; an optional next place to go | Yes: a short celebration, once |
@@ -55,4 +55,4 @@ Many empty containers at once (a new dashboard) stay quiet: text and silhouettes
 
 ## Copy
 
-Follow `ui-copy`'s empty-state row: what will be here, and the one action to start. Headline names the state ("No notes yet", "No matches", "All caught up"); the line below gives the reason and the next step; the button is a verb ("Create a note", "Clear filters"). A quirky line is fine where the table above allows it, in the product's own voice, and never at the expense of the reason.
+Follow `ui-copy`'s empty-state row: what will be here, and the one action to start. Headline names the state ("No projects yet", "No projects match "budget"", "All caught up"); the line below gives the reason and the next step; the button is a verb ("Create a project", "Clear filters"). A quirky line is fine where the table above allows it, in the product's own voice, and never at the expense of the reason.

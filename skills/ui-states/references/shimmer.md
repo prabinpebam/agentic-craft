@@ -28,9 +28,9 @@ A view or section whose content has a known shape loads as a skeleton: placehold
 | Moment | Rule |
 |---|---|
 | Before showing | No skeleton for the first 300 ms (`duration.indicator-delay`); content that arrives in time is drawn directly. The view's frame and known parts show at once |
-| Once shown | At least 500 ms (`duration.indicator-min`), so it never flashes; this already exceeds the 200 ms confirmation floor |
+| Once shown | At least 500 ms (`duration.indicator-min`), so it never flashes. This is the load track; the 200 ms commit beat is for values the person changed, not for loads |
 | The shimmer | One pass of about 1.5 s (`duration.shimmer`), a few passes (`count.shimmer-passes`, about 3), then the placeholders stand still: motion stays under 5 s (WCAG 2.2.2 Pause, Stop, Hide) |
-| Past the motion | Placeholders stand still; the region's one status line carries the wait in words ("Loading your notes…") |
+| Past the motion | Placeholders stand still; the region's one status line carries the wait in words ("Loading your projects…") |
 | Past 10 s | Say it's taking longer than usual, keep the placeholders, offer Cancel or Retry |
 | Timeout | At a defined limit (the operation's own, often 15 to 30 s), stop and hand the region to the [error model](errors.md); a skeleton never stays forever |
 
@@ -53,7 +53,7 @@ A view or section whose content has a known shape loads as a skeleton: placehold
 
 - **The region is busy:** `aria-busy="true"` on the loading view or section until its content is in, then removed.
 - **Placeholders are hidden:** each skeleton shape is `aria-hidden="true"`, not focusable, with no accessible name.
-- **One status, said once:** the region carries one status in words ("Loading your notes…"), visible or in the polite live region, announced once at the start; the content's arrival is announced only when it isn't where focus is or the wait was long.
+- **One status, said once:** the region carries one status in words ("Loading your projects…"), visible or in the polite live region, announced once at the start; the content's arrival is announced only when it isn't where focus is or the wait was long.
 - **Focus stays put:** loading never moves focus; a control in a loading region keeps its accessible name and says it's loading if focused.
 
 ## Skeleton versus empty-state silhouette
