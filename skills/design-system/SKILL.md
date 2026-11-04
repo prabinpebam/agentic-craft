@@ -42,6 +42,7 @@ Rules:
 - **Generated, never hand-edited:** a build script writes the CSS custom properties, a token reference page and any typed helpers for scripts (breakpoints for `matchMedia`, picture `sizes`). A test fails on stale output.
 - **Everything is a token:** colour, space, size, radius, border, shadow, type (family, size, weight, leading, tracking), motion (duration, easing, scale of a press or a lift), layer (z-index), opacity, breakpoints. Width queries use only breakpoint tokens. Sizes in `rem` so text size settings scale everything; `px` only for hairlines, blurs and outlines.
 - **Every token is read** by something; an unread token is removed (tested).
+- **Space has its own skill:** `spacing` sets the scale on one base unit, the roles named by relationship (inset, stack, inline, gutter, page margin), and who owns each space (the layout's `gap` and padding, never a component's outer margin).
 - **Contrast is tested:** every text role at 4.5:1 on every surface in every context; non-text (outlines, focus, checked fills) at 3:1; a "more contrast" context raising muted text and outlines.
 
 A starter token set and a dependency-free build script are in this harness: `templates/tokens/` and `tools/build-tokens.mjs`.
@@ -69,7 +70,7 @@ Native elements first; WCAG 2.2 AA in every context; 44 px targets; a visible fo
 
 ## Enforcement
 
-The system is only as strict as its tests. A design-system test suite (see `references/enforcement.md`) fails on: a raw value in component CSS; a primitive read by a component; a read across owned token groups; an import against the tiers; a `class`/`style` prop on a fundamental; a component without its doc comment, prop docs or story; an unread token; stale generated output; contrast below the thresholds; a hover rule outside its media query; a view with styles. Add the suite on day one; it's cheaper than any review.
+The system is only as strict as its tests. A design-system test suite (see `references/enforcement.md`) fails on: a raw value in component CSS; a primitive read by a component; a read across owned token groups; an import against the tiers; a `class`/`style` prop on a fundamental; a component without its doc comment, prop docs or story; an unread token; stale generated output; contrast below the thresholds; a hover rule outside its media query; a view with styles. Spacing adds its own checks (`spacing`: outer margins, sibling-position spacing, geometry that moves in a state, and a browser probe). Add the suite on day one; it's cheaper than any review.
 
 ## Making a change
 

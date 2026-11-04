@@ -20,6 +20,7 @@ One test file (or a few) that reads the source and fails on any break of the rul
 | **No global escapes** | `:global` or unscoped styles only in the named allow-list of components that style markup they didn't write |
 | **Scripts per instance** | Client scripts set up instances through the shared helper and pass a signal to global listeners |
 | **Copy** | See the `ui-copy` skill's mechanical rules |
+| **Spacing** | See the `spacing` skill's [enforcement](../../spacing/references/enforcement.md): `tools/lint-spacing.mjs` and the browser probe |
 
 And in the browser (end-to-end):
 

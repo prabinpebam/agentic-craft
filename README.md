@@ -15,6 +15,7 @@ It defines product intent; it doesn't prescribe how the work is carried out. For
 | [`assumptions`](skills/assumptions/SKILL.md) | A plan rests on unproven beliefs; deciding what to validate first | Desirability, usability, feasibility and viability assumptions and risks, ranked by impact and evidence, each with a criterion, the cheapest check and the decision it changes |
 | [`definition-of-done`](skills/definition-of-done/SKILL.md) | Defining success; deciding what "done" must prove | Project and stage Definitions of Done made from promises and user-can statements, observable rows with the evidence each needs, a "Try it", and an honest "against the promise" |
 | [`design-system`](skills/design-system/SKILL.md) | Any UI change; defining a design system | Strict W3C DTCG tokens with light, dark and contrast contexts; tokens → fundamentals → compounds → layouts; sealed, self-documenting components; a library built from the source; **views made entirely from data**; the tests that enforce it |
+| [`spacing`](skills/spacing/SKILL.md) | Laying out a view or component; defining spacing tokens or density; a screen that feels cramped, loose or badly grouped; auditing spacing in a running app | A scale on one base unit, roles named by relationship (inset, stack, inline, gutter, page margin) and component tokens; grouping by proximity with inner space never larger than outer; **space owned by the layout**, never by a sibling's position; text, icons, targets, density, small windows, scrolling and right-to-left; geometry that never moves on hover, focus or loading; an audit procedure with a probe, severities and a report that maps each issue to a system-level fix; the lint rules and tests that keep it true |
 | [`ui-copy`](skills/ui-copy/SKILL.md) | Writing any words a person reads | Voice, rules by element (buttons, labels, errors, empty states, waits…), a glossary, patterns, and the mechanical rules as a linter |
 | [`perceived-performance`](skills/perceived-performance/SKILL.md) | Adding anything a person waits on | Four classes of wait (instant, responsive, waiting, long), the feedback patterns, and the rules: never block or lose input, keep the old view, one honest status, never a silent wait |
 | [`ui-states`](skills/ui-states/SKILL.md) | Adding anything whose value can change, that loads, that can fail or that can be empty | Loading, saving, success and error states scoped to the smallest independent unit (app, view, section, component, field); one timing model; pending, confirmed and failed for every component, each held at least 200 ms; shimmer skeletons for views and sections; subtle steps and percentages; focus and announcements after every change; a bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most); transparent errors that always offer a recovery and never lose input; empty states in the content's own wrapper at its minimum size, saying why and what to do |
@@ -40,6 +41,8 @@ It defines product intent; it doesn't prescribe how the work is carried out. For
 | `tools/build-tokens.mjs` | DTCG tokens → CSS custom properties (`light-dark()` pairs, modifier media queries), a reference page, resolved values; `--check` for stale output |
 | `tools/check-tokens.mjs` | Descriptions, component-token ownership, aliases, and contrast pairs in every context |
 | `tools/lint-styles.mjs` | Raw values, primitive tokens and bare `:hover` rules in CSS and component `<style>` blocks |
+| `tools/lint-spacing.mjs` | Outer margins, sibling-position spacing, geometry that changes in a state rule, physical properties, and bare scale steps in components |
+| `tools/spacing-probe.mjs` | Measures a running page (in the browser) and reports spacing findings by severity (in Node): off-scale values, inner gaps larger than insets, headings, groups, targets, clipping, overlap, space that moves when a child is added or a state is forced, right-to-left mirroring |
 | `tools/lint-copy.mjs` | Banned words, title case, long or verbless buttons, straight quotes, emoji as icons, bare "Loading…", glossary terms |
 
 ## Install
@@ -73,6 +76,7 @@ Ask your agent as you normally would; the skills load when they apply. Some star
 - "Define success for this: a project Definition of Done and stages a person can try, with the evidence for each row." (`definition-of-done`)
 - "Critique this spec." (`grounding-critic`)
 - "Define a design system for this app: tokens, fundamentals, compounds, layouts, and render the settings screen from data." (`design-system`)
+- "This dialog feels cramped and its bottom padding sometimes disappears." or "Audit the spacing in the app and fix it at the system level." (`spacing`)
 - "Review the copy on these screens." (`ui-copy`)
 - "Saving feels slow." (`perceived-performance`, then `performance`)
 - "I changed a setting and can't tell whether it saved." or "Design the error states for this flow." (`ui-states`)
@@ -83,6 +87,8 @@ The design-system tools run on their own too:
 node tools/build-tokens.mjs --src design/ --css styles/tokens.css --md docs/tokens.md --json design/tokens.resolved.json
 node tools/check-tokens.mjs --src design/
 node tools/lint-styles.mjs src/components --allow 1px
+node tools/lint-spacing.mjs src/components src/layouts --allow-margin .prose
+node tools/spacing-probe.mjs audit/settings.json --target 44          # a snapshot from collect(), run in the page
 node tools/lint-copy.mjs src/components --glossary docs/glossary.md
 ```
 
@@ -95,6 +101,7 @@ node tools/lint-copy.mjs src/components --glossary docs/glossary.md
 - **Confirmed changes, recoverable errors:** every change is confirmed where it happened, scoped to what it affects, and every failure says what happened and offers a way back.
 - **Usable by design:** what to build comes from the chain (promise, jobs, user-can statements, flows); the UI that serves it is designed and reviewed against Nielsen's ten usability heuristics (H1 to H10), and the decisions they drive are written down.
 - **Strict systems:** every value a token, every component in its tier and documented, every screen data.
+- **Space that groups and stays put:** proximity shows what belongs together; the layout owns every space, so it survives new content, states and languages.
 - **Portable artifacts:** Markdown and JSON with stable IDs any person, agent or tool can cite.
 
 ## Using it with agent-orchestration and Slate

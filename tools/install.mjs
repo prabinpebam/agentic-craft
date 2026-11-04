@@ -36,7 +36,7 @@ export function section(/** @type {string | null} */ facts) {
   return `${START}
 ## Craft (agentic-craft harness)
 
-This project uses the [agentic-craft](https://github.com/prabinpebam/agentic-craft) skills for product reasoning: what is worth building and what success means. Start with the \`craft\` skill; it routes to the rest: \`ground\` (promise → jobs → user-can → flows → UI), \`assumptions\`, \`definition-of-done\`, \`design-system\`, \`ui-copy\`, \`perceived-performance\`, \`ui-states\`, \`performance\`. Agents: \`grounding-critic\`, \`design-system-auditor\`. These skills define product intent and success criteria; they don't prescribe how the work is carried out.
+This project uses the [agentic-craft](https://github.com/prabinpebam/agentic-craft) skills for product reasoning: what is worth building and what success means. Start with the \`craft\` skill; it routes to the rest: \`ground\` (promise → jobs → user-can → flows → UI), \`assumptions\`, \`definition-of-done\`, \`design-system\`, \`spacing\`, \`ui-copy\`, \`perceived-performance\`, \`ui-states\`, \`performance\`. Agents: \`grounding-critic\`, \`design-system-auditor\`. These skills define product intent and success criteria; they don't prescribe how the work is carried out.
 
 ${facts ?? defaultFacts}
 ${END}`;

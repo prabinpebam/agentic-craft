@@ -288,6 +288,34 @@ test('product reasoning only: no execution-control skills, agents, templates or 
   }
 });
 
+test('spacing keeps its rules and references, its tokens hold the ratios, and its neighbours point to it', () => {
+  const dir = join(ROOT, 'skills', 'spacing');
+  const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
+  for (const rule of [/Inner space never exceeds outer space/, /at least twice/, /never less than 1\.5 times/, /a heading belongs to what follows/i, /Insets stay constant; nesting doesn't escalate/, /The layout owns space/, /`:last-child`/, /tooltip appended to a dialog/, /4 px base unit/, /Measure space to what the eye sees/, /24 × 24 CSS px/, /Geometry is stable/, /Logical, not physical/, /Density is a context/, /320 CSS px/])
+    assert.match(skill, rule, `spacing keeps ${rule}`);
+  for (const part of ['## Choosing a value', '## Rules by element', '## Never', '## The audit', '## Enforcement', '## Review checklist', 'S1 Broken', 'S2 Misgrouped', 'S3 Fragile', 'S4 Polish'])
+    assert.ok(skill.includes(part), `SKILL.md has ${part}`);
+  assert.ok(skill.length <= 18000, `SKILL.md stays lean (${skill.length} characters)`);
+  for (const r of ['tokens.md', 'elements.md', 'audit.md', 'enforcement.md', 'sources.md']) assert.ok(skill.includes(`references/${r}`), `SKILL.md links ${r}`);
+  const audit = readFileSync(join(dir, 'references', 'audit.md'), 'utf8');
+  for (const part of ['## 1. Inventory', '## 3. Perturb', '## 4. States', '## 6. Right to left', '## 8. Trace each finding to its source', '## 9. Choose the fix at the level of the system', '## 11. The report', 'Root causes', 'Tests to add', 'forcePseudoState'])
+    assert.ok(audit.includes(part), `the audit covers ${part}`);
+  for (const s of ['craft', 'design-system']) assert.match(readFileSync(join(ROOT, 'skills', s, 'SKILL.md'), 'utf8'), /`spacing`/, `${s} points to spacing`);
+  assert.match(readFileSync(join(ROOT, 'agents', 'design-system-auditor.agent.md'), 'utf8'), /`spacing`/);
+  // The starter roles alias scale steps, and their resolved values keep the ratios.
+  const tokens = JSON.parse(readFileSync(join(ROOT, 'templates', 'tokens', 'tokens.json'), 'utf8'));
+  const rem = (name) => {
+    const v = tokens.space[name].$value;
+    return typeof v === 'string' ? rem(/^\{space\.([\w-]+)\}$/.exec(v)[1]) : v.value;
+  };
+  for (const [name, t] of Object.entries(tokens.space)) if (!/^\d+$/.test(name)) assert.match(t.$value, /^\{space\.\d+\}$/, `space.${name} aliases a scale step`);
+  const stack = ['stack-pair', 'stack-item', 'stack-group', 'stack-section'].map(rem);
+  for (let i = 1; i < stack.length; i++) assert.ok(stack[i] >= 1.5 * stack[i - 1], 'each stack level is at least 1.5 × the one below');
+  assert.ok(rem('inline-group') >= 1.5 * rem('inline-item'));
+  assert.ok(rem('stack-group') <= rem('inset-md') && rem('inset-md') <= rem('inset-lg'), 'groups fit inside cards and dialogs');
+  for (const [name, t] of Object.entries(tokens.space)) if (/^\d+$/.test(name)) assert.ok(Math.abs(t.$value.value / 0.25 - Number(name)) < 1e-9, `space.${name} is ${name} base units`);
+});
+
 test('the spacing linter finds space the layout does not own, and passes layout-owned styles', () => {
   const rules = (css, o) => lintSpacing(css, o).map((f) => `${f.level} ${f.rule.split(':')[0]}`);
   assert.deepEqual(rules('.dialog > :last-child { margin-bottom: var(--space-inset-lg); }'), ['error outer margin', 'error sibling-position spacing']);
