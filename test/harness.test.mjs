@@ -67,6 +67,18 @@ test('the usability heuristics: all ten, in order, and every UX skill and review
     assert.match(readFileSync(join(ROOT, 'agents', `${a}.agent.md`), 'utf8'), /H1 to H10/, `${a} reviews against the heuristics`);
 });
 
+test('ui-states keeps its fixed rules, its references, and its neighbours point to it', () => {
+  const dir = join(ROOT, 'skills', 'ui-states');
+  const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
+  for (const rule of [/at least 200 ms, even when the save is instant/, /smallest independent unit/, /extremely rare/, /green tick in a circle/, /spinner replaces the (switch|control)/i, /subtle/, /notification pill, at the bottom/i, /auto-dismiss or hard-dismiss/, /at most three/, /transparent/, /recovery action/, /Input is never lost/])
+    assert.match(skill, rule, `ui-states keeps ${rule}`);
+  for (const r of ['components.md', 'notification-pill.md', 'errors.md', 'sources.md']) assert.ok(existsSync(join(dir, 'references', r)), `references/${r}`);
+  for (const s of ['perceived-performance', 'ui-copy']) assert.match(readFileSync(join(ROOT, 'skills', s, 'SKILL.md'), 'utf8'), /`ui-states`/, `${s} points to ui-states`);
+  assert.match(readFileSync(join(ROOT, 'agents', 'design-system-auditor.agent.md'), 'utf8'), /`ui-states`/);
+  const tokens = JSON.parse(readFileSync(join(ROOT, 'templates', 'tokens', 'tokens.json'), 'utf8'));
+  assert.deepEqual(tokens.duration['confirm-min'].$value, { value: 200, unit: 'ms' });
+});
+
 test('relative links in the markdown resolve', () => {
   for (const f of walk(ROOT).filter((x) => x.endsWith('.md'))) {
     for (const m of readFileSync(f, 'utf8').matchAll(/\]\((?!https?:|#|mailto:)([^)\s]+)\)/g)) {

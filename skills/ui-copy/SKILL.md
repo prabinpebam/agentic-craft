@@ -10,7 +10,7 @@ Words are interface. They follow written rules, use one glossary, and are checke
 ## Voice
 
 - **Plain, direct, warm.** Say what's true in the fewest words a person needs. Write for someone who doesn't know the system's internals.
-- **The person's words, not the system's.** Never a path, an ID, a stack trace, a status code, or a developer term before the person has chosen to see one ("Save to remote" belongs in an advanced screen, not the first run).
+- **The person's words, not the system's.** Never a path, an ID, a stack trace, a status code, or a developer term before the person has chosen to see one ("Save to remote" belongs in an advanced screen, not the first run). One exception: the subtle step line of a long operation may name its technical steps, because it's there to show steady progress, not to be read closely (`ui-states`).
 - **Confident and honest.** No hedging, no hype, no apologising in a loop, never a promise the product can't keep.
 - **Second person for the person, first person never for the product** (unless it's a person speaking, like a site owner's welcome).
 
@@ -29,7 +29,7 @@ Words are interface. They follow written rules, use one glossary, and are checke
 | **Empty state** | What will be here, and the one action to start | No pages yet. Start a page | Nothing found |
 | **Confirmation** | Name the thing and the consequence; the button repeats the verb | Delete "Spring trip"? It can't be undone. [Delete page] | Are you sure? [OK] |
 | **Wait** | Name the work, with the count | Preparing 118 pictures… | Loading… |
-| **Toast / notification** | One fact, then one optional action | Page published. View it | Success! |
+| **Toast / notification pill** | One fact, then one optional action; one line, three at most (`ui-states`) | Page published. View it | Success! |
 | **Accessible name** | The same words as the visible label; an icon-only control names its action | aria-label="Close the menu" | aria-label="X" |
 
 ## Universal rules
@@ -46,8 +46,8 @@ Words are interface. They follow written rules, use one glossary, and are checke
 
 ## Patterns
 
-- **Errors:** [what happened]. [How to fix it, as an action]. Keep what they typed. Name the field; focus the first one in error. For a system failure: say it isn't their fault, what still works, and when to try again.
-- **Waits:** [Verb]ing [object] [count]… → [Object] [past participle] [when]. See `perceived-performance`.
+- **Errors:** [what happened]. [Why, if known]. [What was kept]. [How to fix it, as an action]. Keep what they typed. Name the field; focus the first one in error. For a system failure: say it isn't their fault, what still works, and when to try again. Where an error shows and which recovery it offers: `ui-states`.
+- **Waits:** [Verb]ing [object] [count]… → [Object] [past participle] [when]. See `perceived-performance`; steps and percentages: `ui-states`.
 - **Choices with tiers:** each option says what you get and what it asks of you, in one line each; the recommended option first and marked.
 - **Steps a person must take outside the product:** numbered, each one action, the link on the step, and what to bring back.
 - **Destructive actions:** the button names the action ("Delete page"), not "Yes"; say whether it can be undone.

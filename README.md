@@ -17,6 +17,7 @@ It defines product intent; it doesn't prescribe how the work is carried out. For
 | [`design-system`](skills/design-system/SKILL.md) | Any UI change; defining a design system | Strict W3C DTCG tokens with light, dark and contrast contexts; tokens → fundamentals → compounds → layouts; sealed, self-documenting components; a library built from the source; **views made entirely from data**; the tests that enforce it |
 | [`ui-copy`](skills/ui-copy/SKILL.md) | Writing any words a person reads | Voice, rules by element (buttons, labels, errors, empty states, waits…), a glossary, patterns, and the mechanical rules as a linter |
 | [`perceived-performance`](skills/perceived-performance/SKILL.md) | Adding anything a person waits on | Four classes of wait (instant, responsive, waiting, long), the feedback patterns, and the rules: never block or lose input, keep the old view, one honest status, never a silent wait |
+| [`ui-states`](skills/ui-states/SKILL.md) | Adding anything whose value can change or that can fail | Loading, saving, success and error states scoped to the smallest independent unit (app, view, section, component, field); pending, confirmed and failed for every component, confirmed for at least 200 ms; subtle steps and percentages; a bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most); transparent errors that always offer a recovery and never lose input |
 | [`performance`](skills/performance/SKILL.md) | Setting targets or budgets; changing loading or rendering; claiming something is faster | One benchmark command, metrics from the person's point of view, server spans, a committed baseline, noise-aware regression checks, budgets and targets, field data |
 
 | Agent | Job |
@@ -74,6 +75,7 @@ Ask your agent as you normally would; the skills load when they apply. Some star
 - "Define a design system for this app: tokens, fundamentals, compounds, layouts, and render the settings screen from data." (`design-system`)
 - "Review the copy on these screens." (`ui-copy`)
 - "Saving feels slow." (`perceived-performance`, then `performance`)
+- "I changed a setting and can't tell whether it saved." or "Design the error states for this flow." (`ui-states`)
 
 The design-system tools run on their own too:
 
@@ -90,6 +92,7 @@ node tools/lint-copy.mjs src/components --glossary docs/glossary.md
 - **Assumptions named:** what the plan takes on faith is written down, ranked and given a test.
 - **Success means evidence:** a row in a table, with the proof it needs named in advance.
 - **Honest waits:** speed is felt; feedback is matched to the wait and never lies.
+- **Confirmed changes, recoverable errors:** every change is confirmed where it happened, scoped to what it affects, and every failure says what happened and offers a way back.
 - **Usable by design:** what to build comes from the chain (promise, jobs, user-can statements, flows); the UI that serves it is designed and reviewed against Nielsen's ten usability heuristics (H1 to H10), and the decisions they drive are written down.
 - **Strict systems:** every value a token, every component in its tier and documented, every screen data.
 - **Portable artifacts:** Markdown and JSON with stable IDs any person, agent or tool can cite.

@@ -63,6 +63,12 @@
 |---|---|---|---|
 | | responsive | Save state | ≤ 300 ms |
 
+**Changes and failures** (`ui-states`):
+
+| Change | Scope | Pending · confirmed · failed | Recovery |
+|---|---|---|---|
+| | field | commit border, locked · tick, 200 ms minimum · error below, value kept | Retry · Revert |
+
 ## 8. Copy
 
 <New glossary terms; the words for every failure in the flows.>
