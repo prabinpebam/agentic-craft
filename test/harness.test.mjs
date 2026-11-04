@@ -393,6 +393,10 @@ test('the spacing probe exempts ignored elements from every rule and measures a 
   const leaf = (id, parent, x, y) => box(id, parent, x, y, 16, 16, { display: 'block', flow: 'block' });
   const menu = { ...snap, elements: [{ ...page, children: ['5'] }, rows, row('6', 300), leaf('6a', '6', 0, 308), leaf('6b', '6', 24, 308), row('9', 334), leaf('9a', '9', 0, 342), leaf('9b', '9', 24, 342)] };
   assert.deepEqual(analyze(menu).filter((f) => f.rule === 'group-separation'), [], 'rows read apart by their content, not their box edges');
+  // A spread row (a label at one end, its value at the other) isn't a group of far-apart members.
+  const spreadRow = (id, y) => ({ ...row(id, y), spread: true });
+  const spreadMenu = { ...menu, elements: [menu.elements[0], { ...rows }, spreadRow('6', 300), { ...leaf('6a', '6', 0, 308) }, { ...leaf('6b', '6', 180, 308) }, spreadRow('9', 334), leaf('9a', '9', 0, 342), leaf('9b', '9', 180, 342)] };
+  assert.deepEqual(analyze(spreadMenu).filter((f) => f.rule === 'group-separation'), [], 'space-between is alignment, not grouping');
 });
 
 test('the spacing probe skips what is visually hidden and sees ::before and ::after hit extensions', () => {

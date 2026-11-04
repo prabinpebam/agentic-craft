@@ -32,7 +32,7 @@ import { readFileSync } from 'node:fs';
  *   hit?: { x: number, y: number, w: number, h: number },
  *   display: string, flow: 'row' | 'column' | 'block' | 'grid' | 'inline', pad: Sides, mar: Sides, border: Sides,
  *   gap: { row: number, col: number }, lineHeight: number, fontSize: number, interactive: boolean, enclosed: boolean,
- *   heading: number, outOfFlow: boolean, ignored: boolean, inlineText: boolean, centred: boolean, ellipsis: boolean,
+ *   heading: number, outOfFlow: boolean, ignored: boolean, inlineText: boolean, centred: boolean, ellipsis: boolean, spread?: boolean,
  *   clip: null | { sw: number, sh: number, cw: number, ch: number }, scrolls: boolean, children: string[] }} Box
  * @typedef {{ url: string, viewport: { w: number, h: number }, rootFontSize: number, dir: string, pageScroll: { sw: number, cw: number }, elements: Box[] }} Snapshot
  * @typedef {{ severity: 'S1' | 'S2' | 'S3' | 'S4', rule: string, path: string, measured: string, expected: string, fix: string }} Finding
@@ -136,6 +136,7 @@ export function collect(options = {}) {
       inlineText: display === 'inline' && parentText,
       centred: ml > 0 && Math.abs(ml - mr) < 0.5 && !!parentEl && getComputedStyle(parentEl).display === 'block',
       ellipsis: cs.textOverflow === 'ellipsis',
+      spread: /space-(between|around|evenly)/.test(cs.justifyContent),
       clip: overflowing ? { sw: el.scrollWidth, sh: el.scrollHeight, cw: el.clientWidth, ch: el.clientHeight } : null,
       scrolls,
       children: [],
@@ -221,10 +222,10 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
   const kids = (e) => e.children.map((c) => byId.get(c)).filter((c) => c && !c.outOfFlow && (c.rect.w > 0 || c.rect.h > 0));
   const onScale = (v) => allow.has(Math.round(Math.abs(v) * 100) / 100) || Math.abs(Math.abs(v) / base - Math.round(Math.abs(v) / base)) < 0.02;
   const axisOf = (e) => (e.flow === 'row' ? 'x' : 'y');
-  /** Measured gaps between consecutive in-flow children along the container's axis. */
+  /** Measured gaps between consecutive in-flow children along the container's axis. A spread row (space-between) aligns its ends; its gaps are alignment, not grouping. */
   const gaps = (e) => {
     const c = kids(e);
-    if (c.length < 2 || e.flow === 'inline') return [];
+    if (c.length < 2 || e.flow === 'inline' || e.spread) return [];
     const ax = axisOf(e);
     const size = ax === 'x' ? 'w' : 'h';
     const sorted = [...c].sort((a, b) => a.rect[ax] - b.rect[ax]);

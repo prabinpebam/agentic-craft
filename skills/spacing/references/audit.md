@@ -59,7 +59,7 @@ findings.push(...where(analyze(base, { base: 4, allow: [1], target: 44 }), 'sett
 | `target-size` | S1 or S2 | A target under 24 × 24 px: S1 when another target is within its 24 px circle, S2 otherwise |
 | `inner-exceeds-inset` | S2 | In an enclosed container, a measured gap between children larger than the measured inset |
 | `heading-space` | S2 or S4 | A heading no further from the content above than from its own (S2), or less than twice as far (S4) |
-| `group-separation` | S2 or S4 | Unenclosed groups less than 1.5 × (S2) or 2 × (S4) apart than their members, measured to what the eye sees: the box gap plus each group's empty inset on the facing sides |
+| `group-separation` | S2 or S4 | Unenclosed groups less than 1.5 × (S2) or 2 × (S4) apart than their members, measured to what the eye sees: the box gap plus each group's empty inset on the facing sides. A spread row (`space-between`) aligns its ends and isn't counted as a group |
 | `off-scale` | S3 | A padding or gap that isn't a multiple of the base unit |
 | `outer-margin`, `negative-margin` | S3 | A block-level element with a margin (centring `auto` margins excepted) |
 | `uneven-insets` | S4 | An enclosed container with different top and bottom padding |
