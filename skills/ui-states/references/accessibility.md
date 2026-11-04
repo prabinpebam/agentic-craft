@@ -31,11 +31,12 @@ What happens to keyboard focus and to screen-reader announcements after every ch
 
 ## Not colour alone
 
-- The commit colour has the spinner or tick as its twin; the error colour an icon and words (WCAG 1.4.1).
+- With room for a mark, the commit colour has the spinner or tick as its twin; the error colour an icon and words (WCAG 1.4.1). Without room, border patterns or status words in the nearest place with room carry the state beyond colour; Retry and the failure message stay there, associated with the control.
 - The tick shape is the visual cue; its text twin is the announcement, and the icon itself is `aria-hidden`.
 - Borders, ticks and icons reach 3:1 against their background (1.4.11); many stock greens don't on white, so the success token is checked.
 
 ## Motion
 
 - **Reduced motion changes motion, not timing.** The 200 ms beats still hold; the tick appears without drawing; a spinner becomes a static busy mark (with the words or announcement carrying the state); the pill fades instead of sliding; the shimmer doesn't run; a failed drag snaps back instead of animating.
+- **Border-as-spinner:** reduced motion uses a dashed or held border, no sweep. The element keeps focus, a distinct focus ring, `aria-busy` while pending and the same status announcement as the inline case.
 - **No layout shift:** a spinner, tick or icon takes the box of what it replaces; a button keeps its width.

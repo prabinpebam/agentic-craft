@@ -10,6 +10,20 @@ Shared anatomy:
 - **The same element throughout:** pending never unmounts or replaces the focusable element. A spinner that "replaces" a control is drawn inside the control's own box; the element keeps its role, name and focus, with `aria-disabled="true"` and `aria-busy="true"` while pending.
 - **State attribute:** the component reads its state from one attribute set by the task tracker (`perceived-performance`): `data-busy="ack|on|done|failed"`. A commit goes straight to `on`; `ack` is for loads still inside their delay.
 
+## Room for a mark or border-as-spinner
+
+Choose by space, not by control type. This placement rule overrides the inline examples below when a control has no room.
+
+| Space | Pending | Confirmed | Failed |
+|---|---|---|---|
+| **Room for a mark** (a field with free space at the inline end, a list row) | An inline spinner in a reserved slot | A tick in that slot | An error icon with Retry and the message |
+| **No room** (segments of a segmented control, chips, small icon buttons, tiles, swatches, compact pills) | The element's own border becomes the spinner: an arc sweeping around its shape and radius, without replacing its content | The border turns the success colour for at least `duration.confirm-min` (200 ms) | The border turns the danger colour; Retry plus the message goes in the nearest place with room, never squeezed inside the element |
+
+- **Timing:** pending starts in the next frame and holds at least `duration.confirm-min` (200 ms), or until the save ends; then the success border or tick holds at least `duration.confirm-min`. Locks end when confirmed begins.
+- **Reduced motion:** a dashed or held border, no sweep; the same timing.
+- **Accessibility:** `aria-busy="true"` while pending, the same status announcement as the inline case, and focus stays on the element. Keep its focus ring distinct from the state border. Border patterns or nearby status words convey the state beyond colour; a failure's nearby message is associated with the control.
+- **Tokens:** reuse semantic commit, success and danger colours and the component's border width and radius tokens; arc length and sweep duration, if specified, are component tokens, never literal values in components.
+
 ## Text field and input, blur-commit
 
 The value is saved when the field loses focus (or on Enter for a single-line field), with no Save button.
@@ -18,7 +32,7 @@ The value is saved when the field loses focus (or on Enter for a single-line fie
 |---|---|
 | Rest | The stored value |
 | Editing | Normal focus ring; nothing is saved while typing |
-| Pending | The border takes the commit colour; the field is momentarily locked (`aria-disabled`, input ignored, focus not moved); if the save outlasts the 200 ms beat, a small spinner in the trailing slot |
+| Pending | The border takes the commit colour; the field is momentarily locked (`aria-disabled`, input ignored, focus not moved); an inline spinner in the trailing slot |
 | Confirmed | The green tick in a circle animates in, in the trailing slot, inside the field on the right; the border returns to rest and the field accepts input again; the tick fades after the beat |
 | Failed | Error border and icon in the trailing slot; the person's value stays in the field; a line below says what happened, with **Retry** and **Revert** (to the last confirmed value); announced with `role="alert"` when focus has moved on, never by pulling focus back |
 | Invalid | Validation runs before the save: error border, the reason below, nothing saved, the field stays editable and keeps the value |
@@ -62,16 +76,16 @@ The group holds one value, so the group is the scope.
 
 | State | What shows |
 |---|---|
-| Pending | A spinner inside the chosen option (in place of the radio's dot, or beside the segment's label); the whole group locked |
-| Confirmed | The selection moves to the chosen option |
-| Failed | The selection stays on the stored option; an error and Retry beside the group |
+| Pending | A spinner in place of the radio's dot; a compact segment's own border becomes the spinner; the whole group locked |
+| Confirmed | The selection moves to the chosen option; a compact segment's success border holds for the beat |
+| Failed | The selection stays on the stored option; a compact segment's border turns the danger colour; the message and Retry beside the group |
 
 - **Keyboard and screen readers:** arrow keys select a radio as they read it, so a group saved on its own commits when focus leaves the group, or after a pause following the last arrow key (`duration.commit-pause`, 500 ms), never on each press. A click or a tap commits at once.
 - A segmented control that only switches what's shown (a view filter, a tab) isn't a saved value and has no commit states.
 
 ## Select and dropdown
 
-Choosing closes the list; the trigger then behaves like a blur-commit text field: the chosen label, the commit border, the lock, the trailing slot spinning if needed, then the tick. A failure puts the last confirmed label back in the trigger, with the error below. A native select moved by arrow keys while closed commits when focus leaves it, like a radio group. A multi-select list commits with its own Save and Cancel, or when it closes, never on each tick.
+Choosing closes the list; the trigger then behaves like a blur-commit text field: the chosen label, the commit border, the lock, the trailing slot spinning, then the tick. A failure puts the last confirmed label back in the trigger, with the error below. A native select moved by arrow keys while closed commits when focus leaves it, like a radio group. A multi-select list commits with its own Save and Cancel, or when it closes, never on each tick.
 
 ## Combobox and async search
 

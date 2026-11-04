@@ -68,11 +68,13 @@ Ask of every change: **what does it affect**, and **can another edit, made befor
 
 ## States by component
 
-These patterns are fixed; the [component reference](references/components.md) extends them to every control (explicit-save fields, radio and segmented groups, selects, comboboxes and async search, date pickers, sliders, list and bulk actions, drag to reorder, uploads, document autosave, destructive actions).
+These patterns are fixed; the [component reference](references/components.md) covers every control.
+
+**Room for a mark:** inline spinner, tick, or error icon with Retry. **No room:** the element's own border becomes the spinner, an arc sweeping around its shape and radius; then a success border for the 200 ms beat, or a danger border with Retry and the message in the nearest place with room, never squeezed inside. Reduced motion: dashed or held border, no sweep. Same `aria-busy` and announcements; focus stays on the element. [Controls and detail](references/components.md#room-for-a-mark-or-border-as-spinner).
 
 | Component | Pending | Confirmed | Failed |
 |---|---|---|---|
-| **Text field, blur-commit** | The border takes the commit colour; the field is momentarily disabled (`aria-disabled`); a small spinner in the trailing slot if the save outlasts the beat | A green tick in a circle animates in on the right, inside the field | Error border and icon; the person's value kept; a message below with Retry and Revert |
+| **Text field, blur-commit** | The border takes the commit colour; the field is momentarily disabled (`aria-disabled`); an inline spinner in the trailing slot | A green tick in a circle animates in on the right, inside the field | Error border and icon; the person's value kept; a message below with Retry and Revert |
 | **Switch, checkbox** | A spinner replaces the switch in its own box, at least 200 ms; the same focusable element stays, locked | The control shows the new value | The stored value again, an error icon and Retry |
 | **Button, call to action** | A spinner in place of its icon, the label in the present tense ("Saving…"), its width fixed, locked | A tick and the past tense ("Saved") | Back to rest; the error at the section's scope |
 | **Long, multi-step operation** | Subtle step text that changes as each step runs, a percentage when known, Cancel | A tick in place, or a pill if the person moved on | The failing step named, what completed kept, Retry from that step |
@@ -86,6 +88,7 @@ These patterns are fixed; the [component reference](references/components.md) ex
 [Shimmer (skeleton) loading for views and sections](references/shimmer.md): placeholders in the real layout with a soft light passing across them.
 
 - **Which indicator:** a shimmer skeleton for views and sections whose shape is known, in the real wrapper and layout (no layout shift); a spinner at component or field scope, or when the shape can't be known; steps or a progress bar for long operations.
+- **Spinner placement:** inline with room, otherwise the element's own border. Placement changes neither timing track.
 - **Timing:** no skeleton for the first 300 ms, at least 500 ms once shown; about three passes, then still; at its timeout, the error at that scope. Never shimmer forever.
 - **Progressive:** each section swaps in complete when its own data is ready; a refresh keeps the old content.
 - **Motion and access:** with reduced motion, no shimmer; `aria-busy="true"` on the region, placeholders `aria-hidden`, one status said once.
@@ -112,7 +115,7 @@ A bare space breaks the layout meant for the content and leaves the person askin
 
 - **Focus stays where the person put it.** A lock never moves it: the same element stays, locked with `aria-disabled`, never `disabled` or unmounted. A blur-commit's result never pulls focus back. Focus moves only when its element goes (a removed row: the next row, else the previous, else the empty state's action) or after an explicit save fails (the section's message bar or the first failing field).
 - **Announce outcomes, not every step:** one polite live region (`role="status"`) for confirmations ("Project name saved", coalesced) and the start and end of loads and operations; `role="alert"` only for a failure the person must know now and that isn't where their focus is. Step text is not live.
-- **Not colour alone:** the tick and the spinner are the commit colour's twins; the tick's text twin is the announcement; the error colour has an icon and words; all reach 3:1.
+- **Not colour alone:** inline marks or border patterns and nearby status words carry the state as well as colour; outcomes have named announcements; borders and marks reach 3:1.
 - **Reduced motion changes motion, not timing:** the beats hold; nothing draws, slides or shimmers.
 
 ## Copy
@@ -127,6 +130,7 @@ Test the mechanical rules ([the checks](references/enforcement.md)): the beats w
 
 - [ ] Every value that can change has pending, confirmed and failed states on the component itself
 - [ ] Pending holds at least 200 ms and confirmed at least 200 ms, even for an instant save; the lock ends when confirmed begins
+- [ ] Room for a mark: inline spinner, tick, error icon with Retry; no room: own-border arc, success/danger border, recovery nearby, no sweep under reduced motion, same focus and announcements
 - [ ] The scope is the smallest independent unit; continuous text is never locked; any app-level block has a written reason
 - [ ] Field: commit-colour border, momentary lock, green tick in a circle animating in on the right
 - [ ] Switch and checkbox: a spinner replaces the control for at least 200 ms, focus kept on the same element

@@ -93,6 +93,28 @@ test('ui-states keeps its fixed rules, its references, and its neighbours point 
   assert.ok(tokens.count['shimmer-passes'].$value * tokens.duration.shimmer.$value.value < 5000, 'shimmer motion stays under 5 s');
 });
 
+test('ui-states keeps the room-for-a-mark and border-as-spinner rule', () => {
+  const dir = join(ROOT, 'skills', 'ui-states');
+  const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
+  const components = readFileSync(join(dir, 'references', 'components.md'), 'utf8');
+  const loading = readFileSync(join(dir, 'references', 'shimmer.md'), 'utf8');
+  for (const [text, name] of [[skill, 'skill'], [components, 'components']]) {
+    for (const rule of [/Room for a mark/, /inline spinner/, /tick/, /error icon with Retry/, /No room/, /element's own border becomes the spinner/, /arc sweeping around its shape and radius/, /success (colour|border)/, /danger (colour|border)/, /nearest place with room, never squeezed inside/, /dashed or held border, no sweep/, /aria-busy/, /focus stays/, /announcements?/, /200 ms/])
+      assert.match(text, rule, `${name} keeps the border-as-spinner rule ${rule}`);
+  }
+  for (const control of ['segments of a segmented control', 'chips', 'small icon buttons', 'tiles', 'swatches', 'compact pills'])
+    assert.ok(components.includes(control), `no-room guidance covers ${control}`);
+  assert.match(components, /Placement rule overrides|placement rule overrides/);
+  assert.match(components, /success colour for at least `duration\.confirm-min` \(200 ms\)/);
+  assert.match(skill, /- \[ \] Room for a mark:.*own-border arc/);
+  for (const rule of [/inline spinner/, /own border becomes the spinner/, /shape and radius/, /dashed or held border, no sweep/, /300 ms delay and 500 ms minimum/, /two 200 ms beats/])
+    assert.match(loading, rule, `loading keeps placement and timing ${rule}`);
+  const access = readFileSync(join(dir, 'references', 'accessibility.md'), 'utf8');
+  assert.match(access, /Border-as-spinner/);
+  assert.match(access, /same status announcement as the inline case/);
+  assert.match(access, /state beyond colour/);
+});
+
 test('ui-states has one coherent timing model, matching its tokens and perceived-performance', () => {
   const dir = join(ROOT, 'skills', 'ui-states');
   const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');

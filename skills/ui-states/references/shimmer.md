@@ -11,6 +11,7 @@ A view or section whose content has a known shape loads as a skeleton: placehold
 | **Progress bar, steps** | Operation | Long or multi-step work where progress can be measured or named |
 | **Nothing** | Any | The content arrives before the indicator delay; it's simply drawn |
 
+- **Spinner placement:** with room for a mark, use an inline spinner; with no room (a compact control), its own border becomes the spinner, an arc following its shape and radius. Reduced motion uses a dashed or held border, no sweep. The [component rule](components.md#room-for-a-mark-or-border-as-spinner) keeps focus, `aria-busy` and announcements unchanged. This changes placement, not timing: a load keeps the 300 ms delay and 500 ms minimum; a commit keeps its two 200 ms beats.
 - Never a skeleton for things that aren't content: buttons, inputs, switches, menus, notifications, dialogs themselves (a dialog's contents may be skeletons).
 - A shape that can't be known (a free-form answer, a search across unknown kinds) uses a spinner or progress with words, not an invented skeleton.
 
