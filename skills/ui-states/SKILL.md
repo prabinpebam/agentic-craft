@@ -1,6 +1,6 @@
 ---
 name: ui-states
-description: Use when adding or changing anything whose value can change (a field, a switch, a choice, a slider, a save button, a list action, an upload, a long operation) or anything that can fail. Decides where a loading, saving, success or error state lives (app, view, section, component or field), how each component shows pending, confirmed and failed, the timing (every committed change confirmed for at least 200 ms, even when instant), subtle step and percentage progress, the bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most), and the error model - scoped, transparent, never losing input, always with a way to recover.
+description: Use when adding or changing anything whose value can change (a field, a switch, a choice, a slider, a save button, a list action, an upload, a long operation) or anything that can fail. Decides where a loading, saving, success or error state lives (app, view, section, component or field), how each component shows pending, confirmed and failed, the timing (every committed change confirmed for at least 200 ms, even when instant), subtle step and percentage progress, the bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most), the error model - scoped, transparent, never losing input, always with a way to recover - and empty states, kept in the content's own wrapper at its minimum size, saying why it's empty and what to do.
 ---
 
 # UI states: every change confirmed, every failure recoverable
@@ -12,7 +12,7 @@ A person who changes something must see that it took. Rename a project in settin
 | Skill | Owns |
 |---|---|
 | `perceived-performance` | How long a wait is (its class), the patterns for loads and redraws (skeletons, stale while updating), never blocking input, the one status line |
-| **`ui-states`** (this) | Where a state lives (its scope), what each component looks like pending, confirmed and failed, the 200 ms confirmation, step and percentage progress, the notification pill, errors and recovery |
+| **`ui-states`** (this) | Where a state lives (its scope), what each component looks like pending, confirmed and failed, the 200 ms confirmation, step and percentage progress, the notification pill, errors and recovery, empty states |
 | `ui-copy` | The words in every state |
 | `design-system` | The states built into components, their timing and colour as tokens |
 
@@ -27,6 +27,7 @@ These hold even where common guidance differs; the trade-offs are recorded in [s
 5. **One notification pill, at the bottom.** For outcomes that aren't visible where the person is. It's auto-dismiss or hard-dismiss, one line normally and at most three in exceptional cases.
 6. **Errors are scoped like loading, transparent, and always recoverable.** Each error shows at the scope it affects, says what happened, why, what was kept and what to do, and offers at least one recovery action. Input is never lost.
 7. **Be true.** "Saved" means stored where it's going. An optimistic state is allowed only when a failure puts it back and says so (`perceived-performance`).
+8. **Empty is never left empty.** An empty state fills the same wrapper the content uses, at that wrapper's defined minimum width and height, so the layout holds. It always says something relevant: why it's empty and what to do to see the content, or a light, quirky message if there's nothing else to say. A subtle silhouette of the expected content is one way to show it.
 
 ## Choosing the scope
 
@@ -91,6 +92,25 @@ One global pill at the bottom of the window, for outcomes not visible where the 
 
 Errors follow the same scopes as loading. Each one is **transparent** (what happened, why if known, what was kept, what to do) and **recoverable** (at least one action: Retry, Undo, Revert, Edit, Details, Report, Reconnect, or Keep mine and Take theirs). Input is never lost. The [error model](references/errors.md) covers presentation by scope, recovery actions, and the success, partial-success, offline, conflict and cancelled states.
 
+## Empty states
+
+Empty states shouldn't just be left empty: a bare space breaks the layout meant for the populated content, and leaves the person asking whether it's loading, broken or done. Full detail: [empty states](references/empty-states.md).
+
+- **Same wrapper, same size.** The empty state renders inside the wrapper the content uses (the card, the panel, the list, the table frame), at the wrapper's own minimum width and height tokens. Nothing collapses, and nothing shifts when content arrives.
+- **Always say something relevant:** why it's empty, what to do to see the expected content (one call to action when there's one), or a light, quirky message if there's nothing else to say.
+- **Silhouette, not skeleton.** A subtle silhouette of the expected content is welcome: static, low-contrast, and paired with words. A loading skeleton moves (a shimmer or a pulse) and has no words. Never let one pass for the other.
+
+| Kind | Why it's empty | What it shows | Tone |
+|---|---|---|---|
+| **First use** | Nothing created yet | What will appear here, a silhouette, the one action that creates the first item | Welcoming; playful is fine |
+| **Cleared by the person** | They removed, archived or finished everything | That it's clear, and where the items went (archive, trash, with Undo while it lasts) | Light; playful is fine |
+| **No results** | A search or filter matched nothing | The query and filters that caused it, Clear filters or Edit search, suggestions | Plain, never playful |
+| **No access** | The person can't see this | Why, and how to get access (Request access, Switch account) | Plain, never playful |
+| **Offline or failed to load** | It couldn't be fetched | An error at this scope ([error model](references/errors.md)): what happened, what was kept, Retry | Plain, never playful |
+| **All done** | Zero is the goal (inbox zero, no alerts, all checks passed) | A success: what was achieved, when it was last checked, nothing to do | Celebratory, briefly |
+
+Each scope gets its own size: the app's first run, a view, a section or card, a component such as a menu or a picker, and a list or table cell ("No due date"). Smaller scopes say less: a cell holds a dash or a few words, never an illustration.
+
 ## Accessibility and motion
 
 - **Busy regions:** `aria-busy="true"` on the scope being updated, only that scope, only while pending.
@@ -114,7 +134,8 @@ Write tests for the mechanical rules, at the level the project already tests com
 - with a save that fails, the input keeps the person's value and a recovery action is focusable;
 - a lock uses `aria-disabled`, and focus stays on the locked control;
 - notification pills: error and partial-success variants never auto-dismiss, text is clamped to three lines, the timer pauses on hover and focus;
-- no full-window blocking state outside a written list of app-scope operations.
+- no full-window blocking state outside a written list of app-scope operations;
+- every container that can be empty has an empty fixture rendered in its own wrapper, at least the wrapper's minimum size, with words and no shimmer, and its first content arrives with no layout shift.
 
 ## Review checklist
 
@@ -128,5 +149,8 @@ Write tests for the mechanical rules, at the level the project already tests com
 - [ ] Every error scoped, transparent, with at least one recovery action; input kept
 - [ ] Success, partial success, offline, conflict and cancelled states designed, not left to chance
 - [ ] Focus kept through locks; one polite live region; reduced motion honoured
+- [ ] Every empty state sits in the content's own wrapper at its minimum size; nothing shifts when content arrives
+- [ ] Every empty state says why it's empty and what to do, with at most one primary action; playful only for first use, cleared and all done
+- [ ] A silhouette is static and subtle, hidden from screen readers; a loading skeleton moves; never confused
 
 Status that's visible (H1), errors that say how to recover (H9) and preventing errors (H5) are the [usability heuristics](../craft/references/usability-heuristics.md) this skill carries most; check them with the rest when the view is reviewed.

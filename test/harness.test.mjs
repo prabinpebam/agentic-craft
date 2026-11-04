@@ -72,7 +72,14 @@ test('ui-states keeps its fixed rules, its references, and its neighbours point 
   const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
   for (const rule of [/at least 200 ms, even when the save is instant/, /smallest independent unit/, /extremely rare/, /green tick in a circle/, /spinner replaces the (switch|control)/i, /subtle/, /notification pill, at the bottom/i, /auto-dismiss or hard-dismiss/, /at most three/, /transparent/, /recovery action/, /Input is never lost/])
     assert.match(skill, rule, `ui-states keeps ${rule}`);
-  for (const r of ['components.md', 'notification-pill.md', 'errors.md', 'sources.md']) assert.ok(existsSync(join(dir, 'references', r)), `references/${r}`);
+  for (const rule of [/Empty is never left empty/, /same wrapper the content uses/, /minimum width and height/, /why it's empty and what to do/, /quirky message/, /subtle silhouette/])
+    assert.match(skill, rule, `ui-states keeps the empty-state rule ${rule}`);
+  const empty = readFileSync(join(dir, 'references', 'empty-states.md'), 'utf8');
+  for (const kind of ['First use', 'Cleared by the person', 'No results', 'No permission or access', 'Offline or failed to load', 'All done']) assert.ok(empty.includes(kind), `empty states cover ${kind}`);
+  for (const scope of ['**App**', '**View**', '**Section or card**', '**Component**', '**List or table cell**']) assert.ok(empty.includes(scope), `empty states cover ${scope}`);
+  assert.match(empty, /Silhouette versus loading skeleton/);
+  assert.match(empty, /No layout shift/);
+  for (const r of ['components.md', 'notification-pill.md', 'errors.md', 'empty-states.md', 'sources.md']) assert.ok(existsSync(join(dir, 'references', r)), `references/${r}`);
   for (const s of ['perceived-performance', 'ui-copy']) assert.match(readFileSync(join(ROOT, 'skills', s, 'SKILL.md'), 'utf8'), /`ui-states`/, `${s} points to ui-states`);
   assert.match(readFileSync(join(ROOT, 'agents', 'design-system-auditor.agent.md'), 'utf8'), /`ui-states`/);
   const tokens = JSON.parse(readFileSync(join(ROOT, 'templates', 'tokens', 'tokens.json'), 'utf8'));

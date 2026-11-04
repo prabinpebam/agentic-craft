@@ -26,7 +26,7 @@ Words are interface. They follow written rules, use one glossary, and are checke
 | **Heading** | Sentence case; names the content, not the action | Contact and visitor counts | Configure Your Services! |
 | **Status** | Present tense for now, past for done; with when | Saving… · Saved just now | Processing request |
 | **Error** | What happened, then how to fix it; keep their input | That link isn't on a service the site can show. Paste a link from Tally or Google Forms. | Invalid input. Error 422 |
-| **Empty state** | What will be here, and the one action to start | No pages yet. Start a page | Nothing found |
+| **Empty state** | What will be here, and the one action to start; why it's empty when it isn't first use (`ui-states`) | No pages yet. Start a page | Nothing found |
 | **Confirmation** | Name the thing and the consequence; the button repeats the verb | Delete "Spring trip"? It can't be undone. [Delete page] | Are you sure? [OK] |
 | **Wait** | Name the work, with the count | Preparing 118 pictures… | Loading… |
 | **Toast / notification pill** | One fact, then one optional action; one line, three at most (`ui-states`) | Page published. View it | Success! |

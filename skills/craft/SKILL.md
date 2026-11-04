@@ -30,7 +30,7 @@ Each link is checked against the one above it (`ground`). The beliefs the chain 
 | Add or change UI, or define a design system | `design-system` |
 | Write any words a person reads in the product | `ui-copy` |
 | Add something that makes a person wait (a save, a load, a sync) | `perceived-performance` |
-| Add or change anything whose value can change or that can fail: its loading, saving, success and error states, their scope, notifications and recovery | `ui-states` |
+| Add or change anything whose value can change, that can fail or that can be empty: its loading, saving, success, error and empty states, their scope, notifications and recovery | `ui-states` |
 | Set performance targets or budgets, change loading or rendering, or judge a claim that something is faster | `performance` |
 | Design a view, or review UI for usability, once the chain above it is written | the [usability heuristics](references/usability-heuristics.md), with `design-system` |
 
