@@ -9,6 +9,8 @@ import { execFileSync } from 'node:child_process';
 import { build } from '../tools/build-tokens.mjs';
 import { contrast, problems } from '../tools/check-tokens.mjs';
 import { lint } from '../tools/lint-styles.mjs';
+import { lintSpacing } from '../tools/lint-spacing.mjs';
+import { analyze, compare, mirror, report } from '../tools/spacing-probe.mjs';
 import { glossary, lintString, stringsInSource } from '../tools/lint-copy.mjs';
 import { defaultKinds, factsCheck, plan, withSection } from '../tools/install.mjs';
 
@@ -284,4 +286,57 @@ test('product reasoning only: no execution-control skills, agents, templates or 
     const m = EXECUTION.exec(readFileSync(f, 'utf8'));
     assert.equal(m, null, `${relative(ROOT, f)}: "${m?.[0]}"`);
   }
+});
+
+test('the spacing linter finds space the layout does not own, and passes layout-owned styles', () => {
+  const rules = (css, o) => lintSpacing(css, o).map((f) => `${f.level} ${f.rule.split(':')[0]}`);
+  assert.deepEqual(rules('.dialog > :last-child { margin-bottom: var(--space-inset-lg); }'), ['error outer margin', 'error sibling-position spacing']);
+  assert.deepEqual(rules('.stack > * + * { padding-block-start: var(--space-stack-item); }'), ['error sibling-position spacing']);
+  assert.deepEqual(rules('@media (hover: hover) { .b:hover { border: 2px solid var(--color-accent); font-weight: 700; } }'), ['error geometry in a state', 'error geometry in a state']);
+  assert.deepEqual(rules('.t[aria-selected="true"] { padding-block-end: 2px; }'), ['error geometry in a state']);
+  assert.deepEqual(rules('.b { margin-left: 0; text-align: left; }'), ['error physical property', 'error physical value']);
+  assert.deepEqual(rules('.b { padding: var(--space-4); }'), ['warn bare scale step']);
+  assert.deepEqual(rules('.b { padding: var(--space-4); }', { strict: true }), ['error bare scale step']);
+  assert.deepEqual(rules('.prose > * + * { margin-block-start: 1em; }', { allowMargin: ['.prose'] }), []);
+  const good = '.card { display: flex; flex-direction: column; gap: var(--space-stack-group); padding: var(--space-inset-md); margin: 0; }\n.wrap { margin-inline: auto; }\n.list li:nth-child(odd) { background: var(--color-bg-raised); }\n.x[class~="y"] { color: var(--color-text); }\n@media (hover: hover) { .b:hover { border-color: var(--color-accent); outline: 2px solid var(--color-focus); } }';
+  assert.deepEqual(lintSpacing(good), []);
+});
+
+test('the spacing probe finds misgrouping, fragile space, small targets, and space that moves or does not mirror', () => {
+  const sides = (t = 0, r = t, b = t, l = r) => ({ t, r, b, l });
+  let n = 0;
+  const box = (parent, x, y, w, h, extra = {}) => ({ id: String(n++), parent, path: extra.path ?? `div:${n - 1}`, tag: 'div', rect: { x, y, w, h }, display: 'flex', flow: 'column', pad: sides(), mar: sides(), border: sides(), gap: { row: 0, col: 0 }, lineHeight: 20, fontSize: 16, interactive: false, enclosed: false, heading: 0, outOfFlow: false, ignored: false, inlineText: false, centred: false, ellipsis: false, clip: null, scrolls: false, children: [], ...extra });
+  const page = box(null, 0, 0, 320, 600, { display: 'block', flow: 'block' });
+  const card = box('0', 0, 0, 200, 100, { enclosed: true, pad: sides(12), path: 'card' });
+  const a = box('1', 12, 12, 176, 20);
+  const b = box('1', 12, 68, 176, 20);
+  const odd = box('0', 0, 120, 100, 40, { pad: sides(10), path: 'odd' });
+  const pushed = box('0', 0, 170, 100, 20, { mar: sides(0, 0, 8, 0), path: 'pushed' });
+  const t1 = box('0', 0, 200, 16, 16, { interactive: true, path: 'tiny-1' });
+  const t2 = box('0', 18, 200, 16, 16, { interactive: true, path: 'tiny-2' });
+  const flow = box('0', 0, 300, 300, 100, { display: 'block', flow: 'block', path: 'flow' });
+  const p1 = box('8', 0, 300, 300, 20);
+  const h = box('8', 0, 324, 300, 20, { heading: 2, path: 'heading' });
+  const p2 = box('8', 0, 360, 300, 20);
+  page.children = ['1', '4', '5', '6', '7', '8'];
+  card.children = ['2', '3'];
+  flow.children = ['9', '10', '11'];
+  const snap = { url: 'x', viewport: { w: 320, h: 600 }, rootFontSize: 16, dir: 'ltr', pageScroll: { sw: 400, cw: 320 }, elements: [page, card, a, b, odd, pushed, t1, t2, flow, p1, h, p2] };
+  const found = analyze(snap).map((f) => `${f.severity} ${f.rule} ${f.path}`);
+  for (const want of ['S1 page-scroll document', 'S2 inner-exceeds-inset card', 'S3 off-scale odd', 'S3 outer-margin pushed', 'S1 target-size tiny-1', 'S2 heading-space heading'])
+    assert.ok(found.includes(want), `finds ${want} in ${found.join(', ')}`);
+  // A child's margin that vanishes when a child is appended is named as the cause, and what it pushed is counted, not listed.
+  const after = structuredClone(snap);
+  after.elements[5].mar.b = 0;
+  for (const i of [6, 7, 8, 9, 10, 11]) after.elements[i].rect.y -= 8;
+  const moved = compare(snap, after, { cause: 'a child added' });
+  assert.deepEqual(moved.map((f) => `${f.rule} ${f.path}`), ['spacing-changed pushed', 'moved document']);
+  assert.match(moved[0].measured, /margin-b 8px → 0px after a child added/);
+  // Physical padding doesn't mirror.
+  const rtl = structuredClone(snap);
+  const ltrOdd = structuredClone(snap);
+  ltrOdd.elements[4].pad = sides(10, 0, 10, 16);
+  rtl.elements[4].pad = sides(10, 0, 10, 16);
+  assert.deepEqual(mirror(ltrOdd, rtl).map((f) => `${f.rule} ${f.path}`), ['not-mirrored odd']);
+  assert.match(report(analyze(snap)), /^# Spacing audit\n\nS1 \d+ · S2 \d+ · S3 \d+ · S4 \d+\n\n\| # \| Severity \| Rule \| Where \| Measured \| Expected \| Root cause \| System fix \| Test \|/);
 });
