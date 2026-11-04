@@ -1,6 +1,6 @@
 ---
 name: ui-states
-description: Use when adding or changing anything whose value can change (a field, a switch, a choice, a slider, a save button, a list action, an upload, a long operation) or anything that can fail. Decides where a loading, saving, success or error state lives (app, view, section, component or field), how each component shows pending, confirmed and failed, the timing (every committed change confirmed for at least 200 ms, even when instant), subtle step and percentage progress, the bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most), the error model - scoped, transparent, never losing input, always with a way to recover - and empty states, kept in the content's own wrapper at its minimum size, saying why it's empty and what to do.
+description: Use when adding or changing anything whose value can change (a field, a switch, a choice, a slider, a save button, a list action, an upload, a long operation) or anything that can fail. Decides where a loading, saving, success or error state lives (app, view, section, component or field), how each component shows pending, confirmed and failed, the timing (every committed change confirmed for at least 200 ms, even when instant), subtle step and percentage progress, shimmer skeletons for views and sections, the bottom notification pill (auto-dismiss or hard-dismiss, one line, three at most), the error model - scoped, transparent, never losing input, always with a way to recover - and empty states, kept in the content's own wrapper at its minimum size, saying why it's empty and what to do.
 ---
 
 # UI states: every change confirmed, every failure recoverable
@@ -12,7 +12,7 @@ A person who changes something must see that it took. Rename a project in settin
 | Skill | Owns |
 |---|---|
 | `perceived-performance` | How long a wait is (its class), the patterns for loads and redraws (skeletons, stale while updating), never blocking input, the one status line |
-| **`ui-states`** (this) | Where a state lives (its scope), what each component looks like pending, confirmed and failed, the 200 ms confirmation, step and percentage progress, the notification pill, errors and recovery, empty states |
+| **`ui-states`** (this) | Where a state lives (its scope), what each component looks like pending, confirmed and failed, the 200 ms confirmation, step and percentage progress, shimmer loading for views and sections, the notification pill, errors and recovery, empty states |
 | `ui-copy` | The words in every state |
 | `design-system` | The states built into components, their timing and colour as tokens |
 
@@ -58,7 +58,18 @@ Ask two questions of every change: **what does it affect** (its blast radius), a
 | Slow | Past 10 s with no progress, say it's taking longer than usual and offer to cancel or keep waiting |
 | Notification pill | About 6 s for one line, 8 s for two or three; paused on hover, on keyboard focus and while the window is in the background |
 
-Timings are tokens (`duration.confirm-min`, `duration.indicator-delay`, `duration.indicator-min`, `duration.notice`), never literals in components.
+Timings are tokens (`duration.confirm-min`, `duration.indicator-delay`, `duration.indicator-min`, `duration.shimmer`, `duration.notice`, and the count `count.shimmer-passes`), never literals in components.
+
+## Shimmer (skeleton) loading for views and sections
+
+A view or section whose content has a known shape loads as a skeleton: placeholder shapes in the real layout with a soft light passing across them. Full detail: [shimmer loading](references/shimmer.md).
+
+- **Which indicator:** a shimmer skeleton for views and sections with a known shape; a spinner at component or field scope, or when the shape can't be known; a progress bar or steps for long operations; nothing when content beats the delay.
+- **The real wrapper and layout:** the same wrapper and minimum size as the content and its empty state, the known headings and toolbars real, placeholders shaped like the content (lines at varied widths, tiles, avatars). No layout shift when it arrives.
+- **Timing:** no skeleton for the first 300 ms, at least 500 ms once shown; one pass of about 1.5 s, a few passes (about 3), then the placeholders stand still, keeping motion under 5 s. Past 10 s, say so; at its timeout, become the error at that scope. Never shimmer forever.
+- **Progressive:** each section swaps in complete when its own data is ready; a refresh keeps the old content until the new is ready instead of showing a skeleton again.
+- **Motion:** a transform-only highlight in the reading direction, colours and timings as tokens; with reduced motion, no shimmer (static placeholders); in forced colours, plain system-colour shapes.
+- **Accessibility:** `aria-busy="true"` on the region, every placeholder `aria-hidden`, one status in words said once.
 
 ## States by component
 
@@ -98,7 +109,7 @@ Empty states shouldn't just be left empty: a bare space breaks the layout meant 
 
 - **Same wrapper, same size.** The empty state renders inside the wrapper the content uses (the card, the panel, the list, the table frame), at the wrapper's own minimum width and height tokens. Nothing collapses, and nothing shifts when content arrives.
 - **Always say something relevant:** why it's empty, what to do to see the expected content (one call to action when there's one), or a light, quirky message if there's nothing else to say.
-- **Silhouette, not skeleton.** A subtle silhouette of the expected content is welcome: static, low-contrast, and paired with words. A loading skeleton moves (a shimmer or a pulse) and has no words. Never let one pass for the other.
+- **Silhouette, not skeleton.** A subtle silhouette of the expected content is welcome: static, low-contrast, and paired with words. A loading skeleton is solid, shimmers for a few passes, and carries only a status about the wait. Never let one pass for the other.
 
 | Kind | Why it's empty | What it shows | Tone |
 |---|---|---|---|
@@ -135,7 +146,8 @@ Write tests for the mechanical rules, at the level the project already tests com
 - a lock uses `aria-disabled`, and focus stays on the locked control;
 - notification pills: error and partial-success variants never auto-dismiss, text is clamped to three lines, the timer pauses on hover and focus;
 - no full-window blocking state outside a written list of app-scope operations;
-- every container that can be empty has an empty fixture rendered in its own wrapper, at least the wrapper's minimum size, with words and no shimmer, and its first content arrives with no layout shift.
+- every container that can be empty has an empty fixture rendered in its own wrapper, at least the wrapper's minimum size, with words and no shimmer, and its first content arrives with no layout shift;
+- every view or section that loads data has a loading fixture: placeholders in its own wrapper, `aria-busy` on the region, placeholders `aria-hidden`, a finite shimmer (iteration count from the token, none under reduced motion), and a timeout that ends in the error state.
 
 ## Review checklist
 
@@ -151,6 +163,10 @@ Write tests for the mechanical rules, at the level the project already tests com
 - [ ] Focus kept through locks; one polite live region; reduced motion honoured
 - [ ] Every empty state sits in the content's own wrapper at its minimum size; nothing shifts when content arrives
 - [ ] Every empty state says why it's empty and what to do, with at most one primary action; playful only for first use, cleared and all done
-- [ ] A silhouette is static and subtle, hidden from screen readers; a loading skeleton moves; never confused
+- [ ] A silhouette is static and subtle, hidden from screen readers; a loading skeleton is solid and shimmers briefly; never confused
+- [ ] Views and sections with a known shape load as a shimmer skeleton in the real wrapper and layout; spinners only at component or field scope
+- [ ] The shimmer shows after 300 ms, stays at least 500 ms, passes a few times (under 5 s of motion) then stands still; none with reduced motion
+- [ ] The loading region is `aria-busy`, its placeholders hidden, one status said once; each section swaps in complete when ready
+- [ ] A skeleton never stays forever: past 10 s it says so, at its timeout it becomes the error
 
 Status that's visible (H1), errors that say how to recover (H9) and preventing errors (H5) are the [usability heuristics](../craft/references/usability-heuristics.md) this skill carries most; check them with the rest when the view is reviewed.

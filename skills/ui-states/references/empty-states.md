@@ -12,16 +12,7 @@ An empty container is a state to design, not an absence. Left bare, it breaks th
 
 ## Silhouette versus loading skeleton
 
-Both preview the shape of the expected content, so they must never be mistaken for each other.
-
-| | Silhouette (empty) | Skeleton (loading) |
-|---|---|---|
-| Means | Nothing here yet; this is what will appear | Content is on its way |
-| Motion | None: static, even with motion allowed | A shimmer or pulse (`perceived-performance`); under reduced motion, a slow fade or a static block, with twin text naming what's loading for assistive technology |
-| Contrast | Subtle: a low-contrast outline or fill, clearly decorative | Solid placeholder blocks |
-| Words | Always paired with the message and action | None visible; the region is `aria-busy` |
-| Shape | A few representative items (two or three rows, one card), faded toward the end | The real layout of the expected content |
-| Interactive | Never; it doesn't look clickable | Never |
+Both preview the shape of the expected content, so they must never be mistaken for each other. The silhouette is faint, never moves, and always comes with a reason and an action; the loading skeleton is solid, shimmers for a few passes, carries only a status about the wait, and marks its region busy. The full comparison is in [shimmer loading](shimmer.md#skeleton-versus-empty-state-silhouette).
 
 A silhouette is optional, one way to show what's expected; the message isn't optional.
 

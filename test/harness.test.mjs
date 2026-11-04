@@ -79,11 +79,18 @@ test('ui-states keeps its fixed rules, its references, and its neighbours point 
   for (const scope of ['**App**', '**View**', '**Section or card**', '**Component**', '**List or table cell**']) assert.ok(empty.includes(scope), `empty states cover ${scope}`);
   assert.match(empty, /Silhouette versus loading skeleton/);
   assert.match(empty, /No layout shift/);
-  for (const r of ['components.md', 'notification-pill.md', 'errors.md', 'empty-states.md', 'sources.md']) assert.ok(existsSync(join(dir, 'references', r)), `references/${r}`);
+  for (const rule of [/Shimmer \(skeleton\) loading for views and sections/, /spinner at component or field scope/, /no skeleton for the first 300 ms, at least 500 ms once shown/, /Never shimmer forever/, /each section swaps in complete/, /with reduced motion, no shimmer/, /`aria-busy="true"` on the region/])
+    assert.match(skill, rule, `ui-states keeps the shimmer rule ${rule}`);
+  const shimmer = readFileSync(join(dir, 'references', 'shimmer.md'), 'utf8');
+  for (const part of ['## When to use which indicator', '## Shape: the real wrapper, the real layout', '## Timing', '## Progressive swap', '## Animation', '## Accessibility', '## Skeleton versus empty-state silhouette', 'error model', 'WCAG 2.2.2', 'aria-hidden'])
+    assert.ok(shimmer.includes(part), `shimmer covers ${part}`);
+  for (const r of ['components.md', 'notification-pill.md', 'errors.md', 'empty-states.md', 'shimmer.md', 'sources.md']) assert.ok(existsSync(join(dir, 'references', r)), `references/${r}`);
   for (const s of ['perceived-performance', 'ui-copy']) assert.match(readFileSync(join(ROOT, 'skills', s, 'SKILL.md'), 'utf8'), /`ui-states`/, `${s} points to ui-states`);
   assert.match(readFileSync(join(ROOT, 'agents', 'design-system-auditor.agent.md'), 'utf8'), /`ui-states`/);
   const tokens = JSON.parse(readFileSync(join(ROOT, 'templates', 'tokens', 'tokens.json'), 'utf8'));
   assert.deepEqual(tokens.duration['confirm-min'].$value, { value: 200, unit: 'ms' });
+  assert.deepEqual(tokens.duration.shimmer.$value, { value: 1500, unit: 'ms' });
+  assert.ok(tokens.count['shimmer-passes'].$value * tokens.duration.shimmer.$value.value < 5000, 'shimmer motion stays under 5 s');
 });
 
 test('relative links in the markdown resolve', () => {

@@ -40,7 +40,7 @@ After Nielsen's response-time limits (0.1 s, 1 s, 10 s) and the Doherty threshol
 | Optimistic placeholder | A structural change (add, move, delete) | Shown at once; the real redraw replaces it in place; a refusal puts it back and says why |
 | Stale while updating | A region redrawn after a change elsewhere | Old content stays; dimmed and "Updating…" only after 300 ms; new content swaps in complete |
 | Double-buffered view | A heavy view must be redrawn | Built hidden, swapped when ready; scroll and selection carried over |
-| Skeleton | Opening a view that takes over 1 s | Chrome at once; regions as skeletons in their real layout; content streams in. A skeleton moves; an empty state's static silhouette doesn't (`ui-states`) |
+| Skeleton | Opening a view that takes over 1 s | Chrome at once; regions as skeletons in their real layout; content streams in. Its shape, shimmer, timing and accessibility: `ui-states`; an empty state's static silhouette never shimmers |
 | Media placeholder | A picture not loaded yet | Its exact box (no layout shift), a shimmer (still under reduced motion), fade in; never a broken icon |
 | Named wait | 1–10 s of known work | "Preparing 118 pictures…", elapsed time after 3 s |
 | Background task | Over 10 s, or work they needn't watch | A task with steps ("Checking · Committing · Pushing") and elapsed time; the screen stays usable; it ends in a notification pill (`ui-states`) |
