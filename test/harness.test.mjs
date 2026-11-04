@@ -10,7 +10,7 @@ import { build } from '../tools/build-tokens.mjs';
 import { contrast, problems } from '../tools/check-tokens.mjs';
 import { lint } from '../tools/lint-styles.mjs';
 import { lintSpacing } from '../tools/lint-spacing.mjs';
-import { analyze, compare, mirror, report } from '../tools/spacing-probe.mjs';
+import { analyze, collect, compare, mirror, report } from '../tools/spacing-probe.mjs';
 import { glossary, lintString, stringsInSource } from '../tools/lint-copy.mjs';
 import { defaultKinds, factsCheck, plan, withSection } from '../tools/install.mjs';
 
@@ -367,4 +367,65 @@ test('the spacing probe finds misgrouping, fragile space, small targets, and spa
   rtl.elements[4].pad = sides(10, 0, 10, 16);
   assert.deepEqual(mirror(ltrOdd, rtl).map((f) => `${f.rule} ${f.path}`), ['not-mirrored odd']);
   assert.match(report(analyze(snap)), /^# Spacing audit\n\nS1 \d+ · S2 \d+ · S3 \d+ · S4 \d+\n\n\| # \| Severity \| Rule \| Where \| Measured \| Expected \| Root cause \| System fix \| Test \|/);
+});
+
+test('the spacing probe exempts ignored elements from every rule and measures a target by its hit extension', () => {
+  const sides = (t = 0, r = t, b = t, l = r) => ({ t, r, b, l });
+  const box = (id, parent, x, y, w, h, extra = {}) => ({ id, parent, path: extra.path ?? `div:${id}`, tag: 'div', rect: { x, y, w, h }, display: 'block', flow: 'block', pad: sides(), mar: sides(), border: sides(), gap: { row: 0, col: 0 }, lineHeight: 20, fontSize: 16, interactive: false, enclosed: false, heading: 0, outOfFlow: false, ignored: false, inlineText: false, centred: false, ellipsis: false, clip: null, scrolls: false, children: [], ...extra });
+  const page = box('0', null, 0, 0, 320, 600, { children: ['1', '2', '3', '4'] });
+  // Prose: off-scale, an outer margin, clipped, a small target. All exempt.
+  const prose = box('1', '0', 0, 0, 300, 100, { ignored: true, pad: sides(10), mar: sides(0, 0, 13, 0), clip: { sw: 300, sh: 200, cw: 300, ch: 100 }, path: 'prose' });
+  const link = box('2', '0', 0, 120, 10, 10, { interactive: true, ignored: true, path: 'prose-link' });
+  // A 20 px icon button whose ::before reaches 32 px: not a small target.
+  const bleed = box('3', '0', 100, 200, 20, 20, { interactive: true, hit: { x: 94, y: 194, w: 32, h: 32 }, path: 'bleed' });
+  const small = box('4', '0', 200, 200, 20, 20, { interactive: true, path: 'small' });
+  const snap = { url: 'x', viewport: { w: 320, h: 600 }, rootFontSize: 16, dir: 'ltr', pageScroll: { sw: 320, cw: 320 }, elements: [page, prose, link, bleed, small] };
+  const found = analyze(snap, { target: 32 }).map((f) => `${f.rule} ${f.path}`);
+  assert.deepEqual(found.filter((f) => /prose|bleed/.test(f)), [], `nothing on prose or the bleeding button: ${found.join(', ')}`);
+  assert.ok(found.includes('target-size small'), found.join(', '));
+  const after = structuredClone(snap);
+  after.elements[1].rect.y += 8;
+  after.elements[1].pad.t = 2;
+  assert.deepEqual(compare(snap, after), [], 'an ignored box that moves is not a finding');
+});
+
+test('the spacing probe skips what is visually hidden and sees ::before and ::after hit extensions', () => {
+  // A minimal DOM: enough of document, getComputedStyle and Element for collect().
+  const styles = new Map();
+  const base = { display: 'block', visibility: 'visible', position: 'static', overflowX: 'visible', overflowY: 'visible', clip: 'auto', clipPath: 'none', flexDirection: 'row', textOverflow: 'clip', backgroundColor: 'transparent', boxShadow: 'none', lineHeight: '20px', fontSize: '16px', rowGap: 'normal', columnGap: 'normal', content: 'none', pointerEvents: 'auto' };
+  for (const k of ['padding', 'margin', 'border']) for (const s of ['Top', 'Right', 'Bottom', 'Left']) base[k === 'border' ? `border${s}Width` : `${k}${s}`] = '0px';
+  for (const s of ['Top', 'Right', 'Bottom', 'Left']) { base[`border${s}Style`] = 'none'; base[`border${s}Color`] = 'transparent'; }
+  const el = (tag, rect, style = {}, kids = [], pseudo = {}) => {
+    const attrs = new Map();
+    const node = {
+      tagName: tag.toUpperCase(), id: '', className: '', children: kids, childNodes: kids, parentElement: null,
+      getAttribute: (k) => attrs.get(k) ?? null, setAttribute: (k, v) => attrs.set(k, v), hasAttribute: (k) => attrs.has(k),
+      matches: (sel) => tag === 'button' && sel.includes('button'), closest: () => null,
+      getBoundingClientRect: () => ({ ...rect, left: rect.x, top: rect.y, right: rect.x + rect.width, bottom: rect.y + rect.height }),
+      scrollWidth: rect.width, scrollHeight: rect.height, clientWidth: rect.width, clientHeight: rect.height, offsetParent: null,
+    };
+    for (const k of kids) k.parentElement = node;
+    styles.set(node, { '': { ...base, ...style }, ...Object.fromEntries(Object.entries(pseudo).map(([p, s]) => [p, { ...base, ...s }])) });
+    return node;
+  };
+  const hiddenButton = el('button', { x: 0, y: 0, width: 16, height: 6 });
+  const srOnly = el('span', { x: 0, y: 0, width: 1, height: 1 }, { overflowX: 'hidden', overflowY: 'hidden', position: 'absolute' }, [hiddenButton]);
+  const bleed = el('button', { x: 100, y: 100, width: 20, height: 20 }, { position: 'relative' }, [], { '::before': { content: '""', position: 'absolute', left: '-6px', top: '-6px', width: '32px', height: '32px' } });
+  const plain = el('button', { x: 200, y: 100, width: 20, height: 20 }, { position: 'relative' }, [], { '::after': { content: '""', position: 'absolute', left: '0px', top: '0px', width: '20px', height: '20px', pointerEvents: 'none' } });
+  const body = el('body', { x: 0, y: 0, width: 320, height: 600 }, {}, [srOnly, bleed, plain]);
+  const saved = { document: globalThis.document, getComputedStyle: globalThis.getComputedStyle, location: globalThis.location, innerWidth: globalThis.innerWidth, innerHeight: globalThis.innerHeight, scrollX: globalThis.scrollX, scrollY: globalThis.scrollY };
+  Object.assign(globalThis, {
+    document: { querySelector: () => body, querySelectorAll: () => [], documentElement: body },
+    getComputedStyle: (node, pseudo = '') => styles.get(node)?.[pseudo] ?? { ...base },
+    location: { href: 'x' }, innerWidth: 320, innerHeight: 600, scrollX: 0, scrollY: 0,
+  });
+  try {
+    const snap = collect();
+    const tags = snap.elements.map((e) => `${e.tag}${e.hit ? ` hit ${e.hit.w}×${e.hit.h} at ${e.hit.x},${e.hit.y}` : ''}`);
+    assert.deepEqual(tags, ['body', 'button hit 32×32 at 94,94', 'button'], 'skips the 1 px clipped wrapper and its button; a pointer-events: none ::after adds nothing');
+    const found = analyze(snap, { target: 32 }).filter((f) => /target/.test(f.rule)).map((f) => f.measured);
+    assert.deepEqual(found, ['20px × 20px'], 'only the button with no extension is small');
+  } finally {
+    Object.assign(globalThis, saved);
+  }
 });

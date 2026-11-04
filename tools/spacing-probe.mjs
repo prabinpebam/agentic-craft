@@ -7,7 +7,10 @@
  * Two halves:
  * - In the page (pass to a browser driver's evaluate; each function is self-contained):
  *     collect(options)  a snapshot of every visible element: box, padding, margin, gap, borders, line height,
- *                       overflow, whether it's interactive, enclosed, a heading or out of flow. Stamps each
+ *                       overflow, whether it's interactive, enclosed, a heading or out of flow, and an interactive
+ *                       element's hit area when a ::before or ::after extends it. Skips what's visually hidden (a
+ *                       clipped wrapper 1 px or less, and everything in it); options.ignore exempts from every rule.
+ *                       Stamps each
  *                       element with data-spacing-id so later snapshots can be compared.
  *     perturb()         prepends a hidden child and appends an absolutely positioned one to every container (the
  *                       run-time tooltip, portal or live region a component didn't plan for); unperturb() removes them.
@@ -26,6 +29,7 @@ import { readFileSync } from 'node:fs';
 /**
  * @typedef {{ t: number, r: number, b: number, l: number }} Sides
  * @typedef {{ id: string, parent: string | null, path: string, tag: string, rect: { x: number, y: number, w: number, h: number },
+ *   hit?: { x: number, y: number, w: number, h: number },
  *   display: string, flow: 'row' | 'column' | 'block' | 'grid' | 'inline', pad: Sides, mar: Sides, border: Sides,
  *   gap: { row: number, col: number }, lineHeight: number, fontSize: number, interactive: boolean, enclosed: boolean,
  *   heading: number, outOfFlow: boolean, ignored: boolean, inlineText: boolean, centred: boolean, ellipsis: boolean,
@@ -58,6 +62,26 @@ export function collect(options = {}) {
     return parts.join(' > ');
   };
   const transparent = (c) => !c || c === 'transparent' || /rgba?\([^)]*,\s*0(\.0+)?\)$/.test(c) || /\/\s*0\)$/.test(c);
+  /** The pointer target: the box grown by any absolutely positioned ::before or ::after that takes the pointer (an invisible hit extension). */
+  const hitArea = (el, cs, r) => {
+    let x1 = r.left, y1 = r.top, x2 = r.right, y2 = r.bottom;
+    const cb = cs.position !== 'static' ? el : el.offsetParent;
+    if (!cb) return null;
+    const cr = cb.getBoundingClientRect();
+    const ccs = cb === el ? cs : getComputedStyle(cb);
+    for (const pseudo of ['::before', '::after']) {
+      const ps = getComputedStyle(el, pseudo);
+      if (!ps || ps.content === 'none' || ps.content === 'normal' || ps.display === 'none' || ps.position !== 'absolute' || ps.pointerEvents === 'none' || ps.visibility === 'hidden') continue;
+      const w = px(ps.width) + px(ps.paddingLeft) + px(ps.paddingRight) + px(ps.borderLeftWidth) + px(ps.borderRightWidth);
+      const h = px(ps.height) + px(ps.paddingTop) + px(ps.paddingBottom) + px(ps.borderTopWidth) + px(ps.borderBottomWidth);
+      if (w <= 0 || h <= 0) continue;
+      const left = cr.left + px(ccs.borderLeftWidth) + px(ps.left);
+      const top = cr.top + px(ccs.borderTopWidth) + px(ps.top);
+      x1 = Math.min(x1, left); y1 = Math.min(y1, top); x2 = Math.max(x2, left + w); y2 = Math.max(y2, top + h);
+    }
+    if (x1 === r.left && y1 === r.top && x2 === r.right && y2 === r.bottom) return null;
+    return { x: x1 + scrollX, y: y1 + scrollY, w: x2 - x1, h: y2 - y1 };
+  };
   /** @type {any[]} */
   const out = [];
   const visit = (el, parentId) => {
@@ -69,6 +93,9 @@ export function collect(options = {}) {
     }
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0 && cs.position !== 'static') return;
+    // Visually hidden (a screen-reader-only wrapper): 1 px or less and clipped, so nothing inside it is seen or pressed.
+    const clipped = cs.overflowX !== 'visible' || cs.overflowY !== 'visible' || (cs.clip && cs.clip !== 'auto') || (cs.clipPath && cs.clipPath !== 'none');
+    if (clipped && (r.width <= 1 || r.height <= 1)) return;
     if (!el.hasAttribute('data-spacing-id')) el.setAttribute('data-spacing-id', String(next++));
     const id = el.getAttribute('data-spacing-id');
     const display = cs.display;
@@ -84,6 +111,8 @@ export function collect(options = {}) {
     const scrolls = /(auto|scroll)/.test(cs.overflowX + cs.overflowY);
     const ml = px(cs.marginLeft);
     const mr = px(cs.marginRight);
+    const interactive = el.matches(INTERACTIVE);
+    const hit = interactive ? hitArea(el, cs, r) : null;
     const box = {
       id,
       parent: parentId,
@@ -98,7 +127,8 @@ export function collect(options = {}) {
       gap: { row: px(cs.rowGap), col: px(cs.columnGap) },
       lineHeight: cs.lineHeight === 'normal' ? px(cs.fontSize) * 1.2 : px(cs.lineHeight),
       fontSize: px(cs.fontSize),
-      interactive: el.matches(INTERACTIVE),
+      interactive,
+      ...(hit ? { hit } : {}),
       enclosed: !transparent(cs.backgroundColor) || hasBorder || (cs.boxShadow && cs.boxShadow !== 'none'),
       heading,
       outOfFlow: cs.position === 'absolute' || cs.position === 'fixed',
@@ -221,7 +251,9 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
   if (snap.pageScroll && snap.pageScroll.sw > snap.pageScroll.cw + 1) out.push({ severity: 'S1', rule: 'page-scroll', path: 'document', measured: `content ${snap.pageScroll.sw}px wide`, expected: `≤ ${snap.pageScroll.cw}px (the window)`, fix: FIX['page-scroll'] });
 
   for (const e of snap.elements) {
-    if (!e.ignored) {
+    // An ignored element (prose, a third-party widget) is exempt from every rule.
+    if (e.ignored) continue;
+    {
       for (const [k, v] of [...Object.entries(e.pad).map(([s, v]) => [`padding-${s}`, v]), ['row-gap', e.gap.row], ['column-gap', e.gap.col]])
         if (v > tol && !onScale(v) && !(k.endsWith('gap') && !/flex|grid/.test(e.display))) add('S3', 'off-scale', e, `${k} ${fmt(v)}`, `a multiple of ${fmt(base)}`);
       if (e.flow !== 'inline' && !e.outOfFlow && e.parent !== null) {
@@ -252,7 +284,7 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
       const c = kids(e).sort((a, b) => a.rect.y - b.rect.y);
       for (let i = 1; i < c.length - 1; i++) {
         const h = c[i];
-        if (!h.heading) continue;
+        if (!h.heading || h.ignored) continue;
         const above = h.rect.y - (c[i - 1].rect.y + c[i - 1].rect.h);
         const below = c[i + 1].rect.y - (h.rect.y + h.rect.h);
         if (above <= below + tol) add('S2', 'heading-space', h, `above ${fmt(above)}, below ${fmt(below)}`, 'above ≥ 2 × below');
@@ -288,6 +320,7 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
     const c = kids(e);
     for (let i = 0; i < c.length; i++)
       for (let j = i + 1; j < c.length; j++) {
+        if (c[i].ignored || c[j].ignored) continue;
         const a = c[i].rect;
         const b = c[j].rect;
         const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
@@ -297,8 +330,8 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
   }
 
   // Targets (WCAG 2.5.8): at least 24 × 24, or a 24 px circle on each touches no other target or circle.
-  // Visually hidden elements (1 px or less) aren't pointer targets.
-  const targets = snap.elements.filter((e) => e.interactive && !e.inlineText && e.rect.w > 1 && e.rect.h > 1);
+  // Visually hidden elements (1 px or less) aren't pointer targets. A target is its box grown by its hit extension.
+  const targets = snap.elements.filter((e) => e.interactive && !e.ignored && !e.inlineText && e.rect.w > 1 && e.rect.h > 1).map((e) => ({ ...e, rect: e.hit ?? e.rect }));
   const centre = (r) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
   for (const t of targets) {
     const small = t.rect.w < 24 - tol || t.rect.h < 24 - tol;
@@ -343,7 +376,7 @@ export function compare(/** @type {Snapshot} */ before, /** @type {Snapshot} */ 
   };
   for (const [id, e1] of a) {
     const e2 = b.get(id);
-    if (!e2) continue;
+    if (!e2 || e1.ignored) continue;
     const r1 = rel(a, e1);
     const r2 = rel(b, e2);
     const moved = Math.abs(r1.x - r2.x) > tol || Math.abs(r1.y - r2.y) > tol;
