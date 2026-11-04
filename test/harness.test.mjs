@@ -387,6 +387,12 @@ test('the spacing probe exempts ignored elements from every rule and measures a 
   after.elements[1].rect.y += 8;
   after.elements[1].pad.t = 2;
   assert.deepEqual(compare(snap, after), [], 'an ignored box that moves is not a finding');
+  // Rows 32 px tall whose 16 px content is centred, 2 px apart, with 8 px between icon and label: they read 18 px apart.
+  const rows = box('5', '0', 0, 300, 200, 98, { display: 'flex', flow: 'column', children: ['6', '9'], path: 'menu' });
+  const row = (id, y) => box(id, '5', 0, y, 200, 32, { display: 'flex', flow: 'row', children: [`${id}a`, `${id}b`], path: `row-${id}` });
+  const leaf = (id, parent, x, y) => box(id, parent, x, y, 16, 16, { display: 'block', flow: 'block' });
+  const menu = { ...snap, elements: [{ ...page, children: ['5'] }, rows, row('6', 300), leaf('6a', '6', 0, 308), leaf('6b', '6', 24, 308), row('9', 334), leaf('9a', '9', 0, 342), leaf('9b', '9', 24, 342)] };
+  assert.deepEqual(analyze(menu).filter((f) => f.rule === 'group-separation'), [], 'rows read apart by their content, not their box edges');
 });
 
 test('the spacing probe skips what is visually hidden and sees ::before and ::after hit extensions', () => {

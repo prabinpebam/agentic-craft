@@ -293,9 +293,17 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
     }
 
     // Groups of groups: the space between unenclosed groups is at least 1.5 × (ideally 2 ×) the space within them.
+    // Measured to what the eye sees: the box gap plus each group's own empty inset on the facing sides (a row
+    // whose content is centred in a taller box reads further from its neighbour than its box edge).
     const groups = kids(e).filter((k) => !k.enclosed && gaps(k).length);
     if (groups.length >= 2 && g.length) {
-      const between = g.filter((x) => groups.includes(x.a) && groups.includes(x.b)).map((x) => x.d);
+      const ax = axisOf(e);
+      const facing = (x) => {
+        const ia = insets(x.a);
+        const ib = insets(x.b);
+        return x.d + (ia ? Math.max(0, ax === 'x' ? ia.r : ia.b) : 0) + (ib ? Math.max(0, ax === 'x' ? ib.l : ib.t) : 0);
+      };
+      const between = g.filter((x) => groups.includes(x.a) && groups.includes(x.b)).map(facing);
       if (between.length) {
         const outer = Math.min(...between);
         const inner = Math.max(...groups.flatMap((k) => gaps(k).map((x) => x.d)));
