@@ -57,6 +57,7 @@ How [spacing](../SKILL.md) applies to each kind of element: its anatomy, the tok
 ## Toolbars
 
 - **Grouping, three ways, one at a time:** buttons in a group close together (`space.inline-item`), with groups apart (`space.inline-group`); or buttons touching inside a segmented enclosure; or a vertical separator between groups with `space.inline-item` either side. Pick one per boundary.
+- **Bare members:** when the toolbar is enclosed (a pill, a bar with a fill or border), its buttons have no border, outline, fill or shadow at rest; only hover, press, the selected or on state, focus and a drop target while dragging draw one, and only while active. A customise mode that shows slots outlines them during the drag, not after.
 - **Targets:** `size.control` by default. A dense toolbar may take a smaller target by a written decision, never under 24 × 24 px, with hit areas that don't overlap; on touch, always `size.control`.
 - **Overflow:** when the toolbar runs out of room, whole groups move to an overflow menu from the end; buttons never shrink their padding to fit.
 

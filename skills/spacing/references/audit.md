@@ -65,6 +65,7 @@ findings.push(...where(analyze(base, { base: 4, allow: [1], target: 44 }), 'sett
 | `uneven-insets` | S4 | An enclosed container with different top and bottom padding |
 | `alignment` | S4 | A child's start edge 0.5 to 4 px from its siblings' |
 | `below-target` | S2 | A target under the project's size, when `target` is given (dense surfaces on the written list excepted) |
+| `nested-enclosure` | S2 | In a row of controls inside an enclosed parent (the row itself, or its parent: a toolbar pill, a segmented control, a card's action row, a menu), two or more members drawn the same way with their own border, fill or shadow at rest, with no state active: not selected, pressed or checked (`aria-pressed`, `aria-selected`, `aria-checked`, `aria-current`, `:checked`), and not a field. Collect at rest, with no pointer over the page. One emphasised action and fields are exempt; the `visual-noise` skill has the wider checks |
 
 ## 3. Perturb: does the space survive a new child?
 
@@ -183,6 +184,7 @@ Fix the cause once, where it lives, so every instance is fixed and the test can 
 | `clipped`, `page-scroll`, `overlap` | Fixed sizes, missing wrapping | `min-block-size` and wrapping in the component; a scroll container in the layout for two-dimensional content |
 | `not-mirrored` | Physical properties | Logical properties in the component |
 | `alignment` | Mismatched insets between neighbours | The same inset role on both, or the layout aligns them |
+| `nested-enclosure` | A member component styled as a standalone control (an outlined or filled button variant) reused inside a group, or a transient cue (a drag slot, a hover fill) set at rest | The group's members use the bare (subtle) variant of the component; the group alone draws the boundary; state and drop-target cues live in state rules (`:hover`, `[aria-pressed="true"]`, a dragging attribute) on the member, never in its resting style |
 
 ## 10. Severity
 

@@ -43,6 +43,7 @@ Rules:
 - **Everything is a token:** colour, space, size, radius, border, shadow, type (family, size, weight, leading, tracking), motion (duration, easing, scale of a press or a lift), layer (z-index), opacity, breakpoints. Width queries use only breakpoint tokens. Sizes in `rem` so text size settings scale everything; `px` only for hairlines, blurs and outlines.
 - **Every token is read** by something; an unread token is removed (tested).
 - **Space has its own skill:** `spacing` sets the scale on one base unit, the roles named by relationship (inset, stack, inline, gutter, page margin), and who owns each space (the layout's `gap` and padding, never a component's outer margin).
+- **So does restraint:** `visual-noise` decides whether a border, fill, shadow, icon or colour should exist at all: the cheapest cue that works, one enclosure per boundary (members of a toolbar, segmented control, card or menu stay bare at rest), state cues only while the state is active, and small stroke, fill and shadow families. A component offers a bare variant for use inside enclosed groups.
 - **Contrast is tested:** every text role at 4.5:1 on every surface in every context; non-text (outlines, focus, checked fills) at 3:1; a "more contrast" context raising muted text and outlines.
 
 A starter token set and a dependency-free build script are in this harness: `templates/tokens/` and `tools/build-tokens.mjs`.
@@ -75,7 +76,7 @@ The system is only as strict as its tests. A design-system test suite (see `refe
 ## Making a change
 
 1. Need a value? Find the token. None fits? Add a semantic token (or a component token aliasing one), rebuild, and use it.
-2. Need a component? Check the library. None fits? Add it in the lowest tier that can hold it, with its doc comment, props and story.
+2. Need a component? Check the library. None fits? Add it in the lowest tier that can hold it, with its doc comment, props and story. Reusing an approved one? Use it as it is: a change to its look is its own change, never a side effect of another task (`visual-noise`).
 3. Need a screen? Express it as data for an existing layout. Only if none fits, add a layout.
 4. Check the anatomy in every context and state before showing anyone; run the design-system suite and the affected end-to-end tests.
 5. Walk the change through the ten [usability heuristics](../craft/references/usability-heuristics.md). A library makes several of them cheap: one component per job keeps things consistent (H4), states built into components show status (H1), and fields with their limits and hints prevent errors and give help in context (H5, H10).

@@ -32,6 +32,7 @@ import { readFileSync } from 'node:fs';
  *   hit?: { x: number, y: number, w: number, h: number },
  *   display: string, flow: 'row' | 'column' | 'block' | 'grid' | 'inline', pad: Sides, mar: Sides, border: Sides,
  *   gap: { row: number, col: number }, lineHeight: number, fontSize: number, interactive: boolean, enclosed: boolean,
+ *   look?: string, selected?: boolean,
  *   heading: number, outOfFlow: boolean, ignored: boolean, inlineText: boolean, centred: boolean, ellipsis: boolean, spread?: boolean,
  *   clip: null | { sw: number, sh: number, cw: number, ch: number }, scrolls: boolean, children: string[] }} Box
  * @typedef {{ url: string, viewport: { w: number, h: number }, rootFontSize: number, dir: string, pageScroll: { sw: number, cw: number }, elements: Box[] }} Snapshot
@@ -130,6 +131,8 @@ export function collect(options = {}) {
       interactive,
       ...(hit ? { hit } : {}),
       enclosed: !transparent(cs.backgroundColor) || hasBorder || (cs.boxShadow && cs.boxShadow !== 'none'),
+      look: [cs.backgroundColor, ...(['Top', 'Right', 'Bottom', 'Left']).map((s) => `${cs[`border${s}Width`]} ${cs[`border${s}Style`]} ${cs[`border${s}Color`]}`), cs.boxShadow].join('|'),
+      selected: el.matches('[aria-pressed="true"],[aria-pressed="mixed"],[aria-selected="true"],[aria-checked="true"],[aria-checked="mixed"],[aria-current]:not([aria-current="false"]),:checked'),
       heading,
       outOfFlow: cs.position === 'absolute' || cs.position === 'fixed',
       ignored: Boolean(ignore && el.closest(ignore)),
@@ -206,6 +209,7 @@ const FIX = {
   'moved': 'Space set by sibling position or by a state rule; move it to the parent gap and padding, or reserve it (layout or component)',
   'spacing-changed': "A rule keyed to sibling position or to a state changes this box's spacing; make it the parent's gap and padding, or reserve it at rest (layout or component)",
   'not-mirrored': 'Replace the physical property (left, right) with its logical one (inline-start, inline-end) in the component',
+  'nested-enclosure': "The group's members use the bare variant: no border, fill or shadow at rest; hover, selection, focus and drop-target cues only in their state rules (component)",
 };
 
 const fmt = (n) => `${Math.round(n * 10) / 10}px`;
@@ -310,6 +314,20 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
         const inner = Math.max(...groups.flatMap((k) => gaps(k).map((x) => x.d)));
         if (inner > tol && outer < 1.5 * inner - tol) add('S2', 'group-separation', e, `between groups ${fmt(outer)}, within ${fmt(inner)}`, `≥ ${fmt(2 * inner)} (never under ${fmt(1.5 * inner)})`);
         else if (inner > tol && outer < 2 * inner - tol) add('S4', 'group-separation', e, `between groups ${fmt(outer)}, within ${fmt(inner)}`, `≥ ${fmt(2 * inner)}`);
+      }
+    }
+
+    // Nested enclosure: a row of controls inside an enclosed group (the row, or its parent) whose members each draw
+    // their own border, fill or shadow at rest. Two or more drawn the same way, with no state active, is noise;
+    // one emphasised action and fields are exempt. Rows of tall tiles (over 64 px) are content, not controls.
+    if (e.flow === 'row' && !e.outOfFlow) {
+      const host = e.enclosed ? e : e.parent !== null ? byId.get(e.parent) : undefined;
+      if (host && host.enclosed && host.parent !== null && !host.ignored) {
+        const members = kids(e).filter((k) => k.interactive && !k.ignored && !/^(input|select|textarea)$/.test(k.tag));
+        const looks = new Map();
+        for (const k of members) if (k.enclosed && !k.selected && k.rect.h <= 64) looks.set(k.look ?? '', (looks.get(k.look ?? '') ?? 0) + 1);
+        const most = Math.max(0, ...looks.values());
+        if (most >= 2) add('S2', 'nested-enclosure', e, `${most} of ${members.length} members enclosed at rest inside an enclosed ${host === e ? 'group' : 'parent'}`, "no border, fill or shadow at rest; the group's boundary is the only one");
       }
     }
 

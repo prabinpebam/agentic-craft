@@ -13,7 +13,7 @@ This file is the contract; the detail is in the references: [tokens](references/
 
 ## The rules
 
-1. **Space groups first.** Show a group by proximity; add an enclosure (a surface, a border) only when proximity isn't enough, and a separator line only between groups that already have space. Use one mechanism per boundary: a divider *and* a large gap *and* a border on the same edge waste space and say nothing more.
+1. **Space groups first.** Show a group by proximity; add an enclosure (a surface, a border) only when proximity isn't enough, and a separator line only between groups that already have space. Use one mechanism per boundary: a divider *and* a large gap *and* a border on the same edge waste space and say nothing more. One enclosure level per boundary: a box inside a box with nothing between them to separate is noise (rule 13).
 2. **Inner space never exceeds outer space.** Within a group, the space between members is smaller than the space that separates the group from its neighbours. For groups with no enclosure, the space between groups is at least twice the space within them (never less than 1.5 times): if items in a row are as far apart as the rows, the rows become a grid. Inside an enclosed container, no gap between its children is larger than its inset (its padding); equal is the limit.
 3. **Flow space grows with the level; a heading belongs to what follows.** Pair < item < group < section < page. The space above a heading is at least twice the space below it, and larger for higher headings (before a section heading > before a subsection heading), so a heading and its content read as one group, apart from the one before.
 4. **Insets stay constant; nesting doesn't escalate.** Every container in a family uses that family's inset at every depth. Deeper structure is shown by enclosure, a heading or a divider, never by ever-growing space: a scale runs out of steps long before a real interface runs out of nesting, and growing insets waste room the content needs. Keep structures flat. A container with no visible boundary of its own adds no inset of its own (no padding inside padding).
@@ -25,6 +25,7 @@ This file is the contract; the detail is in the references: [tokens](references/
 10. **Logical, not physical.** `padding-inline`, `margin-block`, `inset-inline-start`, `text-align: start`. Right-to-left mirrors with no extra rules; anything that must not mirror (a media control, a graph's axis) says so in a comment.
 11. **Density is a context, not a rewrite.** A compact or comfortable mode swaps the role tokens' values in one place; text size, targets and the inner ≤ outer ratios hold in every density.
 12. **Small windows shrink the frame, not the content.** Page margins and gutters change at breakpoints through tokens; component insets keep their minimum. Content never touches the window edge, and nothing clips or overlaps at 320 CSS px wide, at 200 % text size, or with WCAG 1.4.12's text spacing applied.
+13. **Members of an enclosed group stay bare.** A toolbar, segmented control, card or menu draws the group's one boundary; its members get no border, outline, resting fill or shadow of their own. Hover, press, selection, focus and drop-target cues appear only while that state is active. **Transient affordances stay transient:** a cue asked for during one interaction (slot outlines while dragging) is never made permanent. Fields keep the boundary they need (WCAG 1.4.11). More in `visual-noise`.
 
 ## Choosing a value
 
@@ -60,7 +61,7 @@ The summary; each element's anatomy, edge cases and the measurements to check ar
 | Card, tile | `space.inset-md` | At most the inset | Content flush with one edge; actions out of line with the text edge |
 | Dialog, sheet | `space.inset-lg` on header, body and footer alike | Groups at most the inset; sections by heading or divider | Bottom padding from a child's margin; a scrolling body with no end padding; actions that move when the body scrolls |
 | Menu, popover, listbox | `space.inset-sm` in the block direction; items carry their own inline padding | Items touch (their padding is the gap); `space.stack-item` either side of a separator | A hover fill that doesn't reach the edge, or that changes an item's height |
-| Toolbar | `space.inset-sm` | Buttons in a group `space.inline-item`, or touching inside a segmented enclosure; groups `space.inline-group` or a separator | Three mechanisms on one boundary; targets that overlap |
+| Toolbar | `space.inset-sm` | Buttons in a group `space.inline-item`, or touching inside a segmented enclosure; groups `space.inline-group` or a separator | Three mechanisms on one boundary; a border or resting fill on each button inside the toolbar's enclosure; targets that overlap |
 | List, table | Rows by component tokens | Rows touch or `space.stack-item`; cell padding is the column gap | Row height changing on hover or selection; the first column out of line with its header |
 | Panel, sidebar | `space.inset-md` | Sections by heading; `space.stack-section` only when unenclosed | A sticky header covering focused content |
 | Tooltip | `space.inset-sm` | — | Being appended into the flow of its anchor's container |
@@ -74,6 +75,7 @@ The summary; each element's anatomy, edge cases and the measurements to check ar
 - A negative margin to undo space that shouldn't be there; a magic nudge to make a screenshot line up.
 - A gap inside a container larger than its inset; groups separated by less than 1.5 times their inner space.
 - Padding inside padding with no visible boundary between; insets that grow with nesting depth.
+- An enclosure inside an enclosure: bordered or filled buttons at rest inside a bordered toolbar, segments or menu; a drag or hover cue left on at rest.
 - A change of border width, padding, font weight, font size or size on hover, focus, press, selection or loading.
 - A fixed height on anything holding text (it clips at 200 % text or with text spacing); a fixed width on a label.
 - Physical properties (`margin-left`, `padding-right`, `left`, `text-align: left`) where a logical one exists.
@@ -94,7 +96,7 @@ To audit a running app, follow [the audit](references/audit.md). It's written fo
 | Severity | Means | Examples |
 |---|---|---|
 | **S1 Broken** | Content lost, clipped, overlapping or moving; an accessibility failure | Padding lost when a child is appended; layout moves on hover; a target under 24 px; horizontal scroll at 320 px; text clipped at 200 % |
-| **S2 Misgrouped** | Grouping reads wrong, a family is inconsistent, or a target is under the project's size | An inner gap larger than the inset; groups as close as items; a heading nearer the content above than its own; cards with different insets; a 32 px button where `size.control` is 44 |
+| **S2 Misgrouped** | Grouping reads wrong, a family is inconsistent, or a target is under the project's size | An inner gap larger than the inset; groups as close as items; bordered buttons inside a bordered toolbar; a heading nearer the content above than its own; cards with different insets; a 32 px button where `size.control` is 44 |
 | **S3 Fragile** | Right today, wrong after the next change | A literal or off-scale value; a margin on a component; sibling-position spacing; a physical property; a bare scale step in a component |
 | **S4 Polish** | Visible to a careful eye | Untrimmed text; an icon a pixel off centre; edges 1 to 3 px out of line |
 
@@ -112,6 +114,7 @@ The rules hold only where a test holds them ([enforcement](references/enforcemen
 - [ ] Inside every container, gaps ≤ inset; between unenclosed groups, at least twice the space within
 - [ ] Headings closer to their own content than to the content above
 - [ ] Containers in a family share one inset; no inset grows with depth; no padding inside padding
+- [ ] One enclosure per boundary: members of an enclosed group have no border or resting fill; state and drop-target cues show only while active
 - [ ] Space is the parent's gap and padding; no outer margins; no sibling-position selectors
 - [ ] Appending a child to any container changes nothing; hiding one leaves no gap behind
 - [ ] Hover, focus, press, selection and loading move nothing

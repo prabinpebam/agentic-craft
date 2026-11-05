@@ -316,6 +316,25 @@ test('spacing keeps its rules and references, its tokens hold the ratios, and it
   for (const [name, t] of Object.entries(tokens.space)) if (/^\d+$/.test(name)) assert.ok(Math.abs(t.$value.value / 0.25 - Number(name)) < 1e-9, `space.${name} is ${name} base units`);
 });
 
+test('visual-noise keeps its rules, checks and references, and its neighbours and the auditor point to it', () => {
+  const dir = join(ROOT, 'skills', 'visual-noise');
+  const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
+  for (const rule of [/Ink budget/, /One cue per meaning/, /space → alignment → type \(size, weight\) → tone or fill → border → shadow/, /One enclosure per boundary, and a depth limit/, /no border, outline, resting fill or shadow of their own/, /Transient affordances stay transient/, /Approved components keep their look/, /WCAG 1\.4\.11/])
+    assert.match(skill, rule, `visual-noise keeps ${rule}`);
+  for (const check of ['restyled-approved', 'nested-enclosure', 'resting-transient', 'enclosure-depth', 'redundant-cue', 'borders-per-region', 'distinct-strokes', 'distinct-fills', 'distinct-shadows', 'N1 Misleading', '## Review checklist'])
+    assert.ok(skill.includes(check), `visual-noise has ${check}`);
+  for (const r of ['checks.md', 'sources.md']) assert.ok(skill.includes(`references/${r}`), `SKILL.md links ${r}`);
+  assert.ok(skill.length <= 16000, `SKILL.md stays lean (${skill.length} characters)`);
+  const sources = readFileSync(join(dir, 'references', 'sources.md'), 'utf8');
+  for (const s of ['Tufte', 'common-region', 'gestalt-proximity', 'signal-noise-ratio', 'm3.material.io', 'fluent2.microsoft.design', 'non-text-contrast']) assert.ok(sources.includes(s), `sources cite ${s}`);
+  for (const s of ['craft', 'design-system']) assert.match(readFileSync(join(ROOT, 'skills', s, 'SKILL.md'), 'utf8'), /`visual-noise`/, `${s} points to visual-noise`);
+  const spacing = readFileSync(join(ROOT, 'skills', 'spacing', 'SKILL.md'), 'utf8');
+  assert.match(spacing, /Members of an enclosed group stay bare/);
+  assert.match(spacing, /Transient affordances stay transient/);
+  assert.match(readFileSync(join(ROOT, 'skills', 'spacing', 'references', 'audit.md'), 'utf8'), /`nested-enclosure` \| S2/);
+  assert.match(readFileSync(join(ROOT, 'agents', 'design-system-auditor.agent.md'), 'utf8'), /`visual-noise`/);
+});
+
 test('the spacing linter finds space the layout does not own, and passes layout-owned styles', () => {
   const rules = (css, o) => lintSpacing(css, o).map((f) => `${f.level} ${f.rule.split(':')[0]}`);
   assert.deepEqual(rules('.dialog > :last-child { margin-bottom: var(--space-inset-lg); }'), ['error outer margin', 'error sibling-position spacing']);
@@ -367,6 +386,29 @@ test('the spacing probe finds misgrouping, fragile space, small targets, and spa
   rtl.elements[4].pad = sides(10, 0, 10, 16);
   assert.deepEqual(mirror(ltrOdd, rtl).map((f) => `${f.rule} ${f.path}`), ['not-mirrored odd']);
   assert.match(report(analyze(snap)), /^# Spacing audit\n\nS1 \d+ · S2 \d+ · S3 \d+ · S4 \d+\n\n\| # \| Severity \| Rule \| Where \| Measured \| Expected \| Root cause \| System fix \| Test \|/);
+});
+
+test('the spacing probe finds members enclosed at rest inside an enclosed group, and spares selected members, fields and one emphasised action', () => {
+  const sides = (t = 0, r = t, b = t, l = r) => ({ t, r, b, l });
+  const box = (id, parent, x, y, w, h, extra = {}) => ({ id, parent, path: extra.path ?? `div:${id}`, tag: 'div', rect: { x, y, w, h }, display: 'flex', flow: 'row', pad: sides(4), mar: sides(), border: sides(), gap: { row: 0, col: 4 }, lineHeight: 20, fontSize: 16, interactive: false, enclosed: false, heading: 0, outOfFlow: false, ignored: false, inlineText: false, centred: false, ellipsis: false, clip: null, scrolls: false, children: [], ...extra });
+  const btn = (id, parent, x, extra = {}) => box(id, parent, x, 4, 32, 32, { tag: 'button', interactive: true, pad: sides(), ...extra });
+  const ring = 'rgba(0, 0, 0, 0)|1px solid gray';
+  const run = (members, wrap = false) => {
+    const page = box('p', null, 0, 0, 400, 200, { flow: 'block', display: 'block', pad: sides() });
+    const pill = box('t', 'p', 0, 0, 200, 40, { enclosed: true, path: 'toolbar' });
+    const row = wrap ? box('r', 't', 4, 4, 192, 32, { pad: sides(), path: 'group' }) : pill;
+    page.children = ['t'];
+    if (wrap) pill.children = ['r'];
+    row.children = members.map((m) => m.id);
+    for (const m of members) m.parent = row.id;
+    return analyze({ url: 'x', viewport: { w: 400, h: 200 }, rootFontSize: 16, dir: 'ltr', pageScroll: { sw: 400, cw: 400 }, elements: [page, pill, ...(wrap ? [row] : []), ...members] }).filter((f) => f.rule === 'nested-enclosure').map((f) => `${f.severity} ${f.path}`);
+  };
+  assert.deepEqual(run([btn('a', '', 4, { enclosed: true, look: ring }), btn('b', '', 40, { enclosed: true, look: ring }), btn('c', '', 76)]), ['S2 toolbar']);
+  assert.deepEqual(run([btn('a', '', 4, { enclosed: true, look: ring }), btn('b', '', 40, { enclosed: true, look: ring })], true), ['S2 group'], 'a group wrapper inside the pill counts');
+  assert.deepEqual(run([btn('a', '', 4), btn('b', '', 40), btn('c', '', 76)]), [], 'bare members pass');
+  assert.deepEqual(run([btn('a', '', 4, { enclosed: true, look: ring, selected: true }), btn('b', '', 40)]), [], 'a selected member may carry a fill');
+  assert.deepEqual(run([btn('a', '', 4, { enclosed: true, look: 'blue' }), btn('b', '', 40, { enclosed: true, look: ring })]), [], 'one emphasised action beside one outlined action is two cues, not repetition');
+  assert.deepEqual(run([box('a', '', 4, 4, 80, 32, { tag: 'input', interactive: true, enclosed: true, look: ring }), box('b', '', 88, 4, 80, 32, { tag: 'input', interactive: true, enclosed: true, look: ring })]), [], 'fields keep their boundary');
 });
 
 test('the spacing probe exempts ignored elements from every rule and measures a target by its hit extension', () => {

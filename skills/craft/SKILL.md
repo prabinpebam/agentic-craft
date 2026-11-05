@@ -1,6 +1,6 @@
 ---
 name: craft
-description: Use at the start of any product or feature work, and whenever unsure which product practice applies. The entry point to agentic-craft's product reasoning - the chain from customer promise to UI, the assumptions and risks to validate, success criteria and Definitions of Done, and the UX practices (data-driven design systems, spacing, Nielsen's usability heuristics for designing and reviewing UI, UI copy, perceived performance, UI states, performance targets). Routes to the right skill and sets the order they apply in.
+description: Use at the start of any product or feature work, and whenever unsure which product practice applies. The entry point to agentic-craft's product reasoning - the chain from customer promise to UI, the assumptions and risks to validate, success criteria and Definitions of Done, and the UX practices (data-driven design systems, spacing, visual noise, Nielsen's usability heuristics for designing and reviewing UI, UI copy, perceived performance, UI states, performance targets). Routes to the right skill and sets the order they apply in.
 ---
 
 # Craft: product reasoning
@@ -16,7 +16,7 @@ Customer promise  →  Scenarios / jobs to be done  →  User-can statements  �
        (why)               (when and for whom)            (what's possible)        (in what order)    (what it looks like)
 ```
 
-Each link is checked against the one above it (`ground`). The beliefs the chain rests on are listed and ranked (`assumptions`). Success is defined as rows with their evidence (`definition-of-done`). The experience is expressed through a design system (`design-system`), with space that groups and stays put (`spacing`), copy that follows rules (`ui-copy`), waits that feel honest (`perceived-performance`), changes that are confirmed and failures that can be recovered (`ui-states`), and targets that are measured (`performance`). Only the last link, the UI, is designed and reviewed against Nielsen's ten [usability heuristics](references/usability-heuristics.md) (H1 to H10).
+Each link is checked against the one above it (`ground`). The beliefs the chain rests on are listed and ranked (`assumptions`). Success is defined as rows with their evidence (`definition-of-done`). The experience is expressed through a design system (`design-system`), with space that groups and stays put (`spacing`), no mark that carries nothing (`visual-noise`), copy that follows rules (`ui-copy`), waits that feel honest (`perceived-performance`), changes that are confirmed and failures that can be recovered (`ui-states`), and targets that are measured (`performance`). Only the last link, the UI, is designed and reviewed against Nielsen's ten [usability heuristics](references/usability-heuristics.md) (H1 to H10).
 
 **Plan with the chain, check the UI with the heuristics.** What to build, for whom and in what order comes from the promise, the jobs, the user-can statements and the flows, and nothing else. The heuristics never plan a feature or fill in a missing link: a UI that passes all ten can still serve the wrong job, or one picture when the job is forty. Climb the chain first, even when the request arrives as UI; then use the heuristics to shape and review the views that serve it.
 
@@ -29,13 +29,14 @@ Each link is checked against the one above it (`ground`). The beliefs the chain 
 | Define what success means, what "done" must prove, or how far a product is from its promise | `definition-of-done` |
 | Add or change UI, or define a design system | `design-system` |
 | Lay out a view or component, set padding, margins or gaps, define spacing tokens or density, or audit and fix spacing in a running app | `spacing` |
+| Add a border, divider, fill, shadow, icon, colour or line of text; mock a feature that reuses approved components; a screen that feels busy or boxy | `visual-noise` |
 | Write any words a person reads in the product | `ui-copy` |
 | Add something that makes a person wait (a save, a load, a sync) | `perceived-performance` |
 | Add or change anything whose value can change, that can fail or that can be empty: its loading, saving, success, error and empty states, their scope, notifications and recovery | `ui-states` |
 | Set performance targets or budgets, change loading or rendering, or judge a claim that something is faster | `performance` |
 | Design a view, or review UI for usability, once the chain above it is written | the [usability heuristics](references/usability-heuristics.md), with `design-system` |
 
-Most changes need two or three of them: a new screen is `ground` first (which promise, jobs, user-can statements and flows?), then `design-system` (made of what?), `spacing` (grouped how?), `ui-copy` (its words), `perceived-performance` (its waits) and `ui-states` (what each change and failure looks like), and its views are checked against the heuristics.
+Most changes need two or three of them: a new screen is `ground` first (which promise, jobs, user-can statements and flows?), then `design-system` (made of what?), `spacing` (grouped how?), `visual-noise` (every mark earning its place, approved components unchanged), `ui-copy` (its words), `perceived-performance` (its waits) and `ui-states` (what each change and failure looks like), and its views are checked against the heuristics.
 
 ## Rules that hold everywhere
 
