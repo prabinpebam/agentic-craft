@@ -2,6 +2,26 @@
 
 How [spacing](../SKILL.md) applies to each kind of element: its anatomy, the tokens it reads, its edge cases, and what an [audit](audit.md) measures. Roles are from [tokens](tokens.md). "Layout-owned" means the parent sets the space with `gap` and its own `padding`; the element sets none outside its own box.
 
+## Where padding lives
+
+Padding is defined once, at the right level: not too high, not too granular. Whether a surface gets an enclosure at all is `visual-noise`'s call; this section is where its padding goes.
+
+- **Functional and visual wrappers.** A functional wrapper exists for behaviour: it scrolls, clips, positions or sizes, and nobody sees it. A visual wrapper is the surface the eye reads as one thing: a dialog, a card, a panel. These rules are about the visual wrapper. A functional wrapper carries no padding unless it is the level chosen below.
+- **Not all around the surface.** Padding on every side of the outermost visual wrapper fences in everything inside it: a divider can't reach the edges, a row can't run edge to edge, media can't bleed, and a scroll region can't put its scrollbar at the edge.
+- **Not on the leaves.** Padding scattered across leaf components fragments the definition: each piece is right on its own, they drift apart, and lining them up takes arithmetic nobody keeps up to date.
+- **Once, at the highest safe level.** Pad at the highest level where you're confident no content will ever need to break the padding. That is usually one or two levels below the visual wrapper: a dialog's header region and its content region, each with its own inset role.
+- **Full-bleed children opt out by structure.** A child that must reach the edge sits outside the padded region, as its sibling, never inside it and pulled out with a negative margin.
+
+To choose the level for a visual wrapper:
+
+1. **List what sits inside it** and mark anything that must reach its edges, on any side, in any state: a divider, a full-width row or selection fill, media, a scroll region, a sticky bar.
+2. **Nothing will ever bleed** (a tooltip, a chip, a button)? The surface carries its own inset; stop.
+3. **Otherwise go one level down.** Each region (header, body, footer, a column) carries its own padding role; the children that bleed sit between or beside the regions.
+4. **A region that scrolls** is a functional wrapper that bleeds; its padding goes one level further down, on the content inside it ([scroll containers](#scroll-containers-clipping-and-sticky-regions)).
+5. **Stop there.** If a leaf seems to need padding of its own to line up, the region's inset is wrong: fix the region, not the leaf.
+
+**Worked example: a settings dialog.** *Before:* the dialog itself had no padding, and its header and content areas each had their own, which was right. But the content area was padded all around and clipped with `overflow: hidden`, and the right-hand column scrolled inside it. The column's scrollbar sat an inset away from the dialog's right edge; its content was cut off an inset above the dialog's bottom edge; and a text field flush with the clip's start edge lost the left side of its focus ring. Padding the content area was still a level too high. *After:* the dialog has no padding; the header region has its inset; the content area has none and lays out the two columns edge to edge. Each column's scroll region reaches the dialog's edges, so the scrollbar sits at the dialog's edge and content scrolls to its bottom edge. The padding, including the end padding, is on the content inside each scroll region, and it's wider than the focus ring, so no ring is cut. The probe's `padded-surface`, `scroll-inset` and `ring-clipped` rules find the first version and pass the second.
+
 ## Text and headings
 
 - **Prose** (rendered rich text, articles, help): paragraphs separated by a stack role that's at least the line's leading, so paragraphs read as units and not as double-spaced lines. Rendered markup you didn't write is the one place a flow rule (`> * + *`) is acceptable, scoped to the prose container, because the markup has no layout component to own the space; list it in `design-system`'s named list of global escapes.
@@ -33,7 +53,7 @@ How [spacing](../SKILL.md) applies to each kind of element: its anatomy, the tok
 
 ## Cards and tiles
 
-- **Inset:** `space.inset-md` on every side, from the card's component token. The image or media that bleeds to the card's edge is the only exception, and it bleeds on all the sides it touches.
+- **Inset:** `space.inset-md` on every side of the card's body region, from the card's component token. Media that bleeds to the card's edge sits outside the padded body, as its sibling, and bleeds on all the sides it touches; only a card that will never hold anything that bleeds carries the inset itself ([where padding lives](#where-padding-lives)).
 - **Inside:** `space.stack-item` or `space.stack-group`, never more than the inset.
 - **Between cards:** the grid's `gap`. Because each card is enclosed, the gap between cards may equal or be less than the inset; it is never more than twice the inset, or the cards stop reading as a set.
 - **Actions** sit on the same inline start edge as the text above them, except an action footer aligned to the end.
@@ -41,9 +61,9 @@ How [spacing](../SKILL.md) applies to each kind of element: its anatomy, the tok
 
 ## Dialogs and sheets
 
-- **Inset:** `space.inset-lg`, the same on header, body and footer, so the three edges line up. The header and footer may be separated from the body by a divider or a surface change, or by space alone (`space.stack-group`), not both.
+- **Inset:** `space.inset-lg`, the same on header, body content and footer, so the three edges line up; never on the dialog itself, so dividers and the scroll region reach its edges ([where padding lives](#where-padding-lives)). The header and footer may be separated from the body by a divider or a surface change, or by space alone (`space.stack-group`), not both.
 - **The dialog owns its padding** on its own regions. A tooltip, a toast region, a portal or a hidden form element appended into the dialog sits outside the flow (`position: absolute` or `fixed`, or rendered by the layout's host) and changes nothing. The audit's append test proves it.
-- **Scrolling body:** the body is the scroll container and keeps its inline and end padding while scrolled; header and footer stay put. The body's end padding stays visible at the end of the scroll (padding on the scroll container, not a margin on the last child). Scroll shadows or dividers show that more content exists.
+- **Scrolling body:** the body is the scroll region and reaches the dialog's inline edges, so its scrollbar sits at the dialog's edge; header and footer stay put. Its inline and end padding is on the content inside it, so the end padding stays visible at the end of the scroll (not a margin on the last child). Scroll shadows or dividers show that more content exists.
 - **Width:** a minimum and a maximum inline size from size tokens; on small windows, the dialog takes the full width minus `space.margin-page` and its inset doesn't shrink below `space.inset-md`.
 - **Actions:** `space.inline-item` between buttons; aligned to the inline end; the primary first or last, by platform.
 
@@ -85,9 +105,11 @@ How [spacing](../SKILL.md) applies to each kind of element: its anatomy, the tok
 - **Offset** from its anchor by a component token (`c.tooltip.offset`, typically `space.2`), and kept inside the window with `space.2` of clearance.
 - **Inset:** `space.inset-sm`; text trimmed or leading allowed for.
 
-## Scroll containers and sticky regions
+## Scroll containers, clipping and sticky regions
 
-- **Padding belongs to the scroll container,** so the last item has its end space when scrolled to the end. Check it at the end of the scroll, not only at the start.
+- **A scroll region bleeds to its surface's edges.** It's a functional wrapper: nothing around it is padded on the sides it touches, so its scrollbar sits at the surface's edge and its content scrolls all the way to the surface's bottom edge (or to the footer that ends it).
+- **Padding goes on the scroll content inside it,** end padding included, so the last item has its end space when scrolled to the end: on the content element inside the scroll container, never a margin on the last child, never a wrapper outside the region. Check it at the end of the scroll, not only at the start.
+- **Never clip a focus ring or a shadow.** Inside any overflow container (scrolling, `hidden` or `clip`), the space between its clip edge and every control is at least the focus ring's width plus its offset, from tokens (`border.focus` and the ring's offset), and enough for any shadow that must show. Prefer padding inside the clipping element, or `overflow: clip` with `overflow-clip-margin` (rings and shadows paint past the edge), over `overflow: hidden` on a wrapper whose children sit flush with its edge; don't clip at all where nothing overflows.
 - **Scrollbars:** `scrollbar-gutter: stable` on containers whose content can grow past them, so content doesn't jump sideways when a scrollbar appears; with overlay scrollbars, keep the inset clear of the bar.
 - **Sticky headers and footers** set `scroll-padding-block-start` (and `-end`) on the scroll container to their own size, so a focused or linked element is never hidden under them (WCAG 2.4.11).
 - **Scroll snap** uses `scroll-padding` to match the container's inset, so snapped items line up with the content edge.

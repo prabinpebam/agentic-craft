@@ -13,19 +13,20 @@ This file is the contract; the detail is in the references: [tokens](references/
 
 ## The rules
 
-1. **Space groups first.** Show a group by proximity; add an enclosure (a surface, a border) only when proximity isn't enough, and a separator line only between groups that already have space. Use one mechanism per boundary: a divider *and* a large gap *and* a border on the same edge waste space and say nothing more. One enclosure level per boundary: a box inside a box with nothing between them to separate is noise (rule 13).
-2. **Inner space never exceeds outer space.** Within a group, the space between members is smaller than the space that separates the group from its neighbours. For groups with no enclosure, the space between groups is at least twice the space within them (never less than 1.5 times): if items in a row are as far apart as the rows, the rows become a grid. Inside an enclosed container, no gap between its children is larger than its inset (its padding); equal is the limit.
+1. **Space groups first.** Show a group by proximity; add an enclosure (a surface, a border) only when proximity isn't enough, and a separator line only between groups that already have space. Use one mechanism per boundary: a divider *and* a large gap *and* a border on the same edge waste space and say nothing more.
+2. **Inner space never exceeds outer space.** Within a group, the space between members is smaller than the space that separates the group from its neighbours. For groups with no enclosure, the space between groups is at least twice the space within them (never less than 1.5 times). Inside an enclosed container, no gap between its children is larger than its inset (its padding); equal is the limit.
 3. **Flow space grows with the level; a heading belongs to what follows.** Pair < item < group < section < page. The space above a heading is at least twice the space below it, and larger for higher headings (before a section heading > before a subsection heading), so a heading and its content read as one group, apart from the one before.
-4. **Insets stay constant; nesting doesn't escalate.** Every container in a family uses that family's inset at every depth. Deeper structure is shown by enclosure, a heading or a divider, never by ever-growing space: a scale runs out of steps long before a real interface runs out of nesting, and growing insets waste room the content needs. Keep structures flat. A container with no visible boundary of its own adds no inset of its own (no padding inside padding).
-5. **The layout owns space.** Space between siblings is the parent's `gap`; space inside a container is its own `padding`. Components have no outer margin. Space never depends on a sibling's position (`:first-child`, `:last-child`, `:nth-child`, `+`, `~`, `* + *`): anything added at run time (a tooltip, a portal, a live region, a hidden input, a focus guard) changes which child is first or last, and the space moves or vanishes. A real case: a tooltip appended to a dialog became its last child, the rule that spaced the last child stopped matching, and the dialog lost 24 px of bottom padding. With no margins, nothing can collapse either.
+4. **Insets stay constant; nesting doesn't escalate.** Every container in a family uses that family's inset at every depth. Deeper structure is shown by enclosure, a heading or a divider, never by ever-growing space, which wastes room the content needs. Keep structures flat. Padding is set once per surface, never inside padding (rule 14).
+5. **The layout owns space.** Space between siblings is the parent's `gap`; space inside a container is its own `padding`. Components have no outer margin. Space never depends on a sibling's position (`:first-child`, `:last-child`, `:nth-child`, `+`, `~`, `* + *`): anything added at run time (a tooltip, a portal, a live region) changes which child is first or last, and the space moves or vanishes. A real case: a tooltip appended to a dialog became its last child, and the dialog lost its bottom padding.
 6. **Every value is a token on one scale.** A 4 px base unit (0.25 rem), a scale of its multiples, semantic roles that name the relationship (inset, stack, inline, gutter, page margin) and component tokens that alias them. Components read roles and their own tokens, never a literal and preferably never a bare scale step. Values in `rem`, so space grows with text size. See [tokens](references/tokens.md).
-7. **Measure space to what the eye sees.** A line box adds half the leading above and below its text; an icon's artwork has padding inside its box. Space set to the box looks larger than its token. Trim the text box (`text-box: trim-both cap alphabetic` where supported) or build the leading into the role, and centre icons on the text's cap height or x-height. Never compensate with a one-off negative margin.
-8. **A target's size isn't its visual size.** Every pointer target meets the project's target size (`size.control`, 44 px by default, as `design-system` sets). A dense surface (a toolbar, a table, a code editor's gutter) may take a smaller size by a written decision, never below 24 × 24 CSS px, or spaced so a 24 px circle on each touches no other (WCAG 2.5.8). Grow the hit area with padding or an invisible extension that changes neither the look nor the layout.
+7. **Measure space to what the eye sees.** A line box adds half the leading above and below its text; an icon's artwork has padding inside its box. Space set to the box looks larger than its token. Trim the text box (`text-box: trim-both cap alphabetic` where supported) or build the leading into the role, and centre icons on the text's cap height or x-height.
+8. **A target's size isn't its visual size.** Every pointer target meets the project's target size (`size.control`, 44 px by default, as `design-system` sets). A dense surface (a toolbar, a table) may take a smaller size by a written decision, never below 24 × 24 CSS px, or spaced so a 24 px circle on each touches no other (WCAG 2.5.8). Grow the hit area with padding or an invisible extension that changes neither the look nor the layout.
 9. **Geometry is stable.** Hover, focus, pressed, selected, expanded, pending, loading and validation never change an element's size or move its neighbours. Borders are reserved at rest (a transparent border, an inset shadow or an outline), weight and size changes reserve their room, a spinner replaces content in the same box, and scrollbars reserve their gutter. A message that appears (an error, a hint) grows its container in one direction, never moving the control the person is using or anything above it.
 10. **Logical, not physical.** `padding-inline`, `margin-block`, `inset-inline-start`, `text-align: start`. Right-to-left mirrors with no extra rules; anything that must not mirror (a media control, a graph's axis) says so in a comment.
 11. **Density is a context, not a rewrite.** A compact or comfortable mode swaps the role tokens' values in one place; text size, targets and the inner ≤ outer ratios hold in every density.
 12. **Small windows shrink the frame, not the content.** Page margins and gutters change at breakpoints through tokens; component insets keep their minimum. Content never touches the window edge, and nothing clips or overlaps at 320 CSS px wide, at 200 % text size, or with WCAG 1.4.12's text spacing applied.
-13. **Members of an enclosed group stay bare.** A toolbar, segmented control, card or menu draws the group's one boundary; its members get no border, outline, resting fill or shadow of their own. Hover, press, selection, focus and drop-target cues appear only while that state is active. **Transient affordances stay transient:** a drop target gets an accent border only while a dragged item is over it; at rest, nothing in the group has one. Fields keep their boundary (WCAG 1.4.11). See `visual-noise`.
+13. **Members of an enclosed group stay bare.** A toolbar, segmented control, card or menu draws the group's one boundary; its members get no border, outline, resting fill or shadow of their own. **Transient affordances stay transient:** a drop target gets an accent border only while a dragged item is over it; at rest, nothing in the group has one. Fields keep their boundary (WCAG 1.4.11). See `visual-noise`.
+14. **Pad the right level; never clip a focus ring.** Padding serves the visual surface, not wrappers that only scroll, clip or position. Not all around the surface (a divider, row or media can't bleed edge to edge), not scattered on leaves: once, at the highest level no content will need to break, usually one or two levels down (a dialog's header and body, each with its inset). A scroll region bleeds to its surface's edges (scrollbar at the edge, content to the bottom); its padding, end included, goes on the content inside. A clipping ancestor leaves every control the focus ring's width plus offset. See [where padding lives](references/elements.md#where-padding-lives).
 
 ## Choosing a value
 
@@ -47,7 +48,7 @@ For every space, answer in order; the first answer that settles it wins.
 
 4. **Check it against its neighbours.** Inside its container, is it at most the container's inset (rule 2)? Is the space around its group at least twice the space within (rule 2)? Above a heading, at least twice the space below (rule 3)?
 5. **Check what the eye sees:** text trimmed or leading allowed for, icons optically centred, targets big enough, nothing moves between states (rules 7 to 9).
-6. **No role fits?** Either the structure has a level too many (flatten it, or let an enclosure or a heading do the grouping) or a real relationship has no name yet: add a role that aliases a scale step, with a `$description` that names the relationship. Never a literal, never a one-off nudge.
+6. **No role fits?** Either the structure has a level too many (flatten it, or group by enclosure or heading) or a relationship has no name yet: add a role aliasing a scale step, with a `$description` naming it. Never a literal or a nudge.
 
 ## Rules by element
 
@@ -59,7 +60,7 @@ The summary; each element's anatomy, edge cases and the measurements to check ar
 | Field | Component tokens | Label to field and field to hint `space.stack-pair` | A hint or error appearing moves the next field up or the field itself: grow downward only |
 | Form | Its container's | Fields `space.stack-group`; related fields (a fieldset) `space.stack-item` | Groups and fields at the same distance |
 | Card, tile | `space.inset-md` | At most the inset | Content flush with one edge; actions out of line with the text edge |
-| Dialog, sheet | `space.inset-lg` on header, body and footer alike | Groups at most the inset; sections by heading or divider | Bottom padding from a child's margin; a scrolling body with no end padding; actions that move when the body scrolls |
+| Dialog, sheet | `space.inset-lg` on the header, the body's scroll content and the footer, never on the dialog | Groups at most the inset; sections by heading or divider | A scroll region held off the dialog's edges; a clipped focus ring; a scrolling body with no end padding; actions that move when the body scrolls |
 | Menu, popover, listbox | `space.inset-sm` in the block direction; items carry their own inline padding | Items touch (their padding is the gap); `space.stack-item` either side of a separator | A hover fill that doesn't reach the edge, or that changes an item's height |
 | Toolbar | `space.inset-sm` | Buttons in a group `space.inline-item`, or touching inside a segmented enclosure; groups `space.inline-group` or a separator | Three mechanisms on one boundary; a border or resting fill on each button inside the toolbar's enclosure; targets that overlap |
 | List, table | Rows by component tokens | Rows touch or `space.stack-item`; cell padding is the column gap | Row height changing on hover or selection; the first column out of line with its header |
@@ -75,6 +76,7 @@ The summary; each element's anatomy, edge cases and the measurements to check ar
 - A negative margin to undo space that shouldn't be there; a magic nudge to make a screenshot line up.
 - A gap inside a container larger than its inset; groups separated by less than 1.5 times their inner space.
 - Padding inside padding with no visible boundary between; insets that grow with nesting depth.
+- All-around padding on a surface whose child must bleed; padding scattered on leaves; a scroll region inset from its surface; `overflow: hidden` flush against a focus ring.
 - An enclosure inside an enclosure: bordered or filled buttons at rest inside a bordered toolbar, segments or menu; a drag or hover cue left on at rest.
 - A change of border width, padding, font weight, font size or size on hover, focus, press, selection or loading.
 - A fixed height on anything holding text (it clips at 200 % text or with text spacing); a fixed width on a label.
@@ -84,19 +86,19 @@ The summary; each element's anatomy, edge cases and the measurements to check ar
 
 ## The audit
 
-To audit a running app, follow [the audit](references/audit.md). It's written for an agent working against real windows, with the probe in `tools/spacing-probe.mjs`. In short:
+To audit a running app, follow [the audit](references/audit.md), with the probe in `tools/spacing-probe.mjs`. In short:
 
 1. **Inventory** every view and its states, at 320 px and either side of each breakpoint, in each density and theme, left to right and right to left.
-2. **Measure** computed styles and bounding boxes for every visible element: padding, margin, gap, borders, line height, the measured gaps between siblings and the measured insets to the container's edges.
+2. **Measure** the computed styles and boxes of every visible element: padding, margin, gap, borders, line height, gaps between siblings and insets to the container's edges.
 3. **Perturb:** append a hidden and an absolutely positioned child to every container, and force hover, focus and press on every control; anything that moves is a finding.
 4. **Check** each rule: tokens on the scale, no outer margins, inner ≤ outer, headings, edges, targets, stability, clipping and overlap, alignment, right-to-left mirroring.
 5. **Trace** each finding to its source: the token, the component (and its tier) or the layout that set it.
-6. **Report** with the template: severity, where, measured against expected, the rule, the root cause and the **system-level fix** (a token, a component or a layout, never a one-off patch), plus the test that keeps it fixed. Group findings by root cause; one fix usually clears many.
+6. **Report** severity, where, measured against expected, the rule, the root cause, the **system-level fix** (a token, a component or a layout, never a one-off patch) and the test that keeps it. Group findings by root cause.
 
 | Severity | Means | Examples |
 |---|---|---|
-| **S1 Broken** | Content lost, clipped, overlapping or moving; an accessibility failure | Padding lost when a child is appended; layout moves on hover; a target under 24 px; horizontal scroll at 320 px; text clipped at 200 % |
-| **S2 Misgrouped** | Grouping reads wrong, a family is inconsistent, or a target is under the project's size | An inner gap larger than the inset; groups as close as items; bordered buttons inside a bordered toolbar; a heading nearer the content above than its own; cards with different insets; a 32 px button where `size.control` is 44 |
+| **S1 Broken** | Content lost, clipped, overlapping or moving; an accessibility failure | Padding lost when a child is appended; a focus ring clipped by an overflow ancestor; layout moves on hover; a target under 24 px; horizontal scroll at 320 px; text clipped at 200 % |
+| **S2 Misgrouped** | Grouping reads wrong, a family is inconsistent, or a target is under the project's size | An inner gap larger than the inset; a scroll region inset from its surface; groups as close as items; bordered buttons inside a bordered toolbar; a heading nearer the content above than its own; cards with different insets; a 32 px button where `size.control` is 44 |
 | **S3 Fragile** | Right today, wrong after the next change | A literal or off-scale value; a margin on a component; sibling-position spacing; a physical property; a bare scale step in a component |
 | **S4 Polish** | Visible to a careful eye | Untrimmed text; an icon a pixel off centre; edges 1 to 3 px out of line |
 
@@ -104,9 +106,9 @@ To audit a running app, follow [the audit](references/audit.md). It's written fo
 
 The rules hold only where a test holds them ([enforcement](references/enforcement.md)):
 
-- **Static:** `tools/lint-styles.mjs` fails on literal values; `tools/lint-spacing.mjs` fails on outer margins, sibling-position spacing, geometry that changes in a state rule and physical properties, and warns on bare scale steps in components.
-- **Tokens:** every spacing role aliases a scale step and has a description that names the relationship; the scale is multiples of the base unit; density contexts override roles only; the inner ≤ outer ratios hold between roles in every density.
-- **In the browser:** the probe on the library and every layout, failing on S1 and S2; append a child to every container and assert no inset changes; force hover, focus and press on every control and assert no box moves; targets at least `size.control` outside the written dense-surface list, and never under 24 px; no horizontal scroll at 320 px; no clipping at 200 % text or with text spacing; insets mirror in right-to-left.
+- **Static:** `tools/lint-styles.mjs` fails on literal values; `tools/lint-spacing.mjs` on outer margins, sibling-position spacing, state geometry and physical properties, and warns on bare scale steps.
+- **Tokens:** roles alias scale steps and name their relationship; density overrides roles only; the inner ≤ outer ratios hold in every density.
+- **In the browser:** the probe on the library and every layout, failing on S1 and S2, with `--ring` from the focus tokens and full-bleed children marked; an appended child changes no inset; forced states move no box; targets per rule 8; no horizontal scroll at 320 px or clipping at 200 % text or text spacing; insets mirror in right-to-left.
 
 ## Review checklist
 
@@ -114,6 +116,7 @@ The rules hold only where a test holds them ([enforcement](references/enforcemen
 - [ ] Inside every container, gaps ≤ inset; between unenclosed groups, at least twice the space within
 - [ ] Headings closer to their own content than to the content above
 - [ ] Containers in a family share one inset; no inset grows with depth; no padding inside padding
+- [ ] Padding set once per surface below its edge; scroll regions bleed to it; no focus ring clipped
 - [ ] One enclosure per boundary: members of an enclosed group have no border or resting fill; state and drop-target cues show only while active
 - [ ] Space is the parent's gap and padding; no outer margins; no sibling-position selectors
 - [ ] Appending a child to any container changes nothing; hiding one leaves no gap behind
@@ -123,4 +126,4 @@ The rules hold only where a test holds them ([enforcement](references/enforcemen
 - [ ] Nothing clips or overlaps at 320 px, 200 % text, or with text spacing; content never touches the window edge
 - [ ] Right-to-left mirrors; density modes keep the ratios and targets
 
-Spacing carries two of the [usability heuristics](../craft/references/usability-heuristics.md): one inset and one rhythm across the product is consistency (H4), and space that groups without boxes and lines is minimalist design (H8). Check them with the rest when the view is reviewed.
+Spacing carries two of the [usability heuristics](../craft/references/usability-heuristics.md): one inset and one rhythm across the product is consistency (H4), and space that groups without boxes and lines is minimalist design (H8).

@@ -43,6 +43,9 @@ Run `tools/spacing-probe.mjs` on the component library (every story) and on ever
 - **Large text and text spacing:** at 200 % root size and with WCAG 1.4.12 text spacing injected, no `page-scroll`, `clipped`, `overlap` or `content-intrudes`.
 - **Right to left:** `mirror` finds nothing on every layout.
 - **Scrolling:** each scroll container scrolled to its end still shows its end padding; a sticky header's height is in the scroll container's `scroll-padding`, so a focused element scrolled into view isn't covered.
+- **Focus rings are never clipped (S1):** run `analyze` with `ring` set to the focus ring's width plus its offset, resolved from the tokens, never typed; no `ring-clipped` on any story, layout or dialog, scrolled to the start and to the end.
+- **Scroll regions bleed (S2):** no `scroll-inset`. For each dialog, sheet and panel that scrolls, its scroll region's inline-end and block-end edges equal the surface's padding box edges (within 1 px), so the scrollbar sits at the edge and the last content scrolls to the bottom.
+- **Padding sits a level below the surface (S2):** collect with `bleed` set to the full-bleed parts (dividers between regions, edge-to-edge rows, media); no `padded-surface`. Scattered leaf padding stays a review check (S3): a region's children share one inset from the region, not their own.
 
 Keep the browser checks deterministic: fonts loaded, reduced motion, fixed data, the same window size. A failure names the box, the measurement and the rule, so it can be fixed without rerunning the audit.
 

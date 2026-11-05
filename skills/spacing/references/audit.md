@@ -33,6 +33,8 @@ import { collect, perturb, unperturb, analyze, compare, mirror, report } from '.
 
 const ROOT = 'body';
 const IGNORE = '.prose';          // containers that style markup the system didn't write
+const BLEED = '[data-bleed]';     // children that must reach their surface's edge: dividers, edge-to-edge rows, media
+const RING = 5;                   // the focus ring's width plus its offset, in px, from the tokens
 const findings = [];
 const where = (list, context) => list.map((f) => ({ ...f, measured: `${f.measured} [${context}]` }));
 
@@ -41,12 +43,12 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, red
 await page.goto(APP_URL);
 await openView(page, 'settings');                       // reach the view through the normal UI
 await page.evaluate(() => document.fonts.ready);
-const base = await page.evaluate(collect, { root: ROOT, ignore: IGNORE });
+const base = await page.evaluate(collect, { root: ROOT, ignore: IGNORE, bleed: BLEED });
 writeFileSync('audit/settings-1280.json', JSON.stringify(base));
-findings.push(...where(analyze(base, { base: 4, allow: [1], target: 44 }), 'settings, 1280 px'));
+findings.push(...where(analyze(base, { base: 4, allow: [1], target: 44, ring: RING }), 'settings, 1280 px'));
 ```
 
-`collect` returns, for every visible element: its box, padding, margin, border, gap, line height, font size, whether it's interactive, enclosed (a fill, border or shadow), a heading, out of flow, or clipping, and its children. An interactive element's target includes any absolutely positioned `::before` or `::after` that takes the pointer (an invisible hit extension). A visually hidden wrapper (clipped, 1 px or less) is skipped with everything in it, and anything inside `ignore` is exempt from every rule, in `analyze` and `compare` alike. It stamps each element with `data-spacing-id` so later snapshots line up. Wait for fonts and for motion to settle (reduced motion helps) before collecting.
+`collect` returns, for every visible element: its box, padding, margin, border, gap, line height, font size, whether it's interactive, enclosed (a fill, border or shadow), a heading, out of flow, or clipping (with its clip rect, scroll position and `overflow-clip-margin`), whether it scrolls in the block direction, whether it must bleed (`bleed`), and its children. An interactive element's target includes any absolutely positioned `::before` or `::after` that takes the pointer (an invisible hit extension). A visually hidden wrapper (clipped, 1 px or less) is skipped with everything in it, and anything inside `ignore` is exempt from every rule, in `analyze` and `compare` alike. It stamps each element with `data-spacing-id` so later snapshots line up. Wait for fonts and for motion to settle (reduced motion helps) before collecting.
 
 `analyze` checks one snapshot:
 
@@ -54,6 +56,7 @@ findings.push(...where(analyze(base, { base: 4, allow: [1], target: 44 }), 'sett
 |---|---|---|
 | `page-scroll` | S1 | The document is wider than the window |
 | `clipped` | S1 | A box hides content it doesn't scroll or ellipsize |
+| `ring-clipped` | S1 | With `ring` given: a fully visible control whose box, grown by the ring's width plus offset, crosses its nearest clipping ancestor's clip rect (its client area, widened by `overflow-clip-margin`). On an axis that scrolls, an edge counts only when scrolled to it |
 | `overlap` | S1 | In-flow siblings overlap by more than 1 px |
 | `content-intrudes` | S1 | A child sits inside its container's padding (a negative margin, a fixed size) |
 | `target-size` | S1 or S2 | A target under 24 × 24 px: S1 when another target is within its 24 px circle, S2 otherwise |
@@ -66,6 +69,10 @@ findings.push(...where(analyze(base, { base: 4, allow: [1], target: 44 }), 'sett
 | `alignment` | S4 | A child's start edge 0.5 to 4 px from its siblings' |
 | `below-target` | S2 | A target under the project's size, when `target` is given (dense surfaces on the written list excepted) |
 | `nested-enclosure` | S2 | In a row of controls inside an enclosed parent (the row itself, or its parent: a toolbar pill, a segmented control, a card's action row, a menu), two or more members drawn the same way with their own border, fill or shadow at rest, with no state active: not selected, pressed or checked (`aria-pressed`, `aria-selected`, `aria-checked`, `aria-current`, `:checked`), and not a field. Collect at rest, with no pointer over the page. One emphasised action and fields are exempt; the `visual-noise` skill has the wider checks |
+| `scroll-inset` | S2 | A block-direction scroll region whose inline-end edge (where the scrollbar is) or block-end edge stops short of its surface's inner edge (its nearest enclosed ancestor) by no more than the padding of the wrappers between them: the padding, not a footer or a sibling, holds it off the edge |
+| `padded-surface` | S2 | An enclosed surface with padding on all four sides holding a child marked to bleed (`bleed`), with no other enclosure between them |
+
+The last three check [where padding lives](elements.md#where-padding-lives). One part of it the probe can't see: padding scattered across leaves. Read the matched rules for each region's children (section 8): when sibling leaves each carry their own inline padding to line up with the region's edge, instead of the region carrying one inset, record it as S3 (fragile) under one root cause.
 
 ## 3. Perturb: does the space survive a new child?
 
@@ -167,7 +174,7 @@ Search the source for that selector and declaration. Then name the tier: a token
 
 ## 9. Choose the fix at the level of the system
 
-Fix the cause once, where it lives, so every instance is fixed and the test can hold it. Never a per-view override, an `!important`, a negative margin, an extra wrapper with padding, or a nudge to make one screen line up.
+Fix the cause once, where it lives, so every instance is fixed and the test can hold it. Never a per-view override, an `!important`, a negative margin, a wrapper added only to carry padding for one screen, or a nudge to make one screen line up.
 
 | Finding | Usual cause | System-level fix |
 |---|---|---|
@@ -182,6 +189,9 @@ Fix the cause once, where it lives, so every instance is fixed and the test can 
 | `moved` on a state | A border, padding or weight set in a state rule | The component reserves it at rest (transparent border, outline, reserved bold width) |
 | `target-size`, `below-target` | Hit area tied to visual size | The component's hit-area token, padding or invisible extension, at `size.control`; or a written dense-surface decision, never under 24 px |
 | `clipped`, `page-scroll`, `overlap` | Fixed sizes, missing wrapping | `min-block-size` and wrapping in the component; a scroll container in the layout for two-dimensional content |
+| `ring-clipped` | `overflow: hidden` on a wrapper whose controls sit flush with its edge | Padding inside the clipping element of at least the ring's width plus offset (a token), or `overflow: clip` with `overflow-clip-margin`; remove the clip where nothing overflows |
+| `scroll-inset` | The padding sits on a wrapper around the scroll region | Move it onto the content inside the scroll region; the region and the wrappers around it carry none on the sides it touches |
+| `padded-surface` | The surface itself carries the inset | Pad the surface's regions one or two levels below ([where padding lives](elements.md#where-padding-lives)); the child that bleeds becomes their sibling |
 | `not-mirrored` | Physical properties | Logical properties in the component |
 | `alignment` | Mismatched insets between neighbours | The same inset role on both, or the layout aligns them |
 | `nested-enclosure` | A member component styled as a standalone control (an outlined or filled button variant) reused inside a group, or a transient cue (a drag slot, a hover fill) set at rest | The group's members use the bare (subtle) variant of the component; the group alone draws the boundary; state and drop-target cues live in state rules (`:hover`, `[aria-pressed="true"]`, a dragging attribute) on the member, never in its resting style |
@@ -191,7 +201,7 @@ Fix the cause once, where it lives, so every instance is fixed and the test can 
 | Severity | Means | When it's fixed |
 |---|---|---|
 | **S1 Broken** | Content lost, clipped, overlapping or moving; a WCAG failure | Before anyone is shown the change |
-| **S2 Misgrouped** | Grouping reads wrong, or one family looks inconsistent | Before release |
+| **S2 Misgrouped** | Grouping or structure reads wrong (a scroll region or a divider held off its surface's edge), or one family looks inconsistent | Before release |
 | **S3 Fragile** | Right today, wrong after the next change | Batched by root cause; each batch removes a class with a test |
 | **S4 Polish** | Visible to a careful eye | When the component is next changed |
 
@@ -234,7 +244,8 @@ Write the report to the project's documentation, beside the design system. Root 
 
 - **Centred blocks:** equal `auto` margins on a block are centring, not spacing (the probe skips them).
 - **Visually hidden elements** (skip links, screen-reader text) are 1 px boxes; the probe skips them as targets.
-- **Scroll containers** are measured at their current scroll position; their insets are skipped. Check end padding by scrolling to the end and collecting again.
+- **Scroll containers** are measured at their current scroll position; their insets are skipped. Check end padding by scrolling to the end and collecting again; `ring-clipped` likewise checks a scrolling edge only at that end of the scroll.
+- **Inset dividers** are a choice: a divider meant to stop at the content's edge isn't marked `bleed`, so `padded-surface` ignores it.
 - **Enclosure depends on the theme:** a border that's transparent in one theme makes a container unenclosed there. Run light and dark.
 - **Intentional overlap** (an avatar stack, a badge on an icon) is reported as `overlap`; keep it only if it's a component's documented anatomy, drawn out of flow.
 - **Rich text** inside the `ignore` selector follows prose rules; audit it once, as its own component.

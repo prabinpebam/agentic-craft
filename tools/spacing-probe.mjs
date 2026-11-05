@@ -9,9 +9,9 @@
  *     collect(options)  a snapshot of every visible element: box, padding, margin, gap, borders, line height,
  *                       overflow, whether it's interactive, enclosed, a heading or out of flow, and an interactive
  *                       element's hit area when a ::before or ::after extends it. Skips what's visually hidden (a
- *                       clipped wrapper 1 px or less, and everything in it); options.ignore exempts from every rule.
- *                       Stamps each
- *                       element with data-spacing-id so later snapshots can be compared.
+ *                       clipped wrapper 1 px or less, and everything in it); options.ignore exempts from every rule;
+ *                       options.bleed marks the children that must reach their surface's edge (dividers, edge-to-edge
+ *                       rows, media). Stamps each element with data-spacing-id so later snapshots can be compared.
  *     perturb()         prepends a hidden child and appends an absolutely positioned one to every container (the
  *                       run-time tooltip, portal or live region a component didn't plan for); unperturb() removes them.
  * - In Node:
@@ -20,7 +20,7 @@
  *     mirror(ltr, rtl)            findings for insets that don't swap sides in right to left;
  *     report(findings, title)     a markdown report (the audit's template).
  *
- *   node spacing-probe.mjs <snapshot.json> [--compare <after.json> | --mirror <rtl.json>] [--base 4] [--allow 1,2] [--target 44] [--title "…"]
+ *   node spacing-probe.mjs <snapshot.json> [--compare <after.json> | --mirror <rtl.json>] [--base 4] [--allow 1,2] [--target 44] [--ring 4] [--title "…"]
  *
  * Exit 1 when any S1 or S2 finding is reported.
  */
@@ -34,7 +34,8 @@ import { readFileSync } from 'node:fs';
  *   gap: { row: number, col: number }, lineHeight: number, fontSize: number, interactive: boolean, enclosed: boolean,
  *   look?: string, selected?: boolean,
  *   heading: number, outOfFlow: boolean, ignored: boolean, inlineText: boolean, centred: boolean, ellipsis: boolean, spread?: boolean,
- *   clip: null | { sw: number, sh: number, cw: number, ch: number }, scrolls: boolean, children: string[] }} Box
+ *   clip: null | { sw: number, sh: number, cw: number, ch: number, cx?: number, cy?: number, st?: number, sl?: number, m?: number },
+ *   scrolls: boolean, scrollsY?: boolean, bleed?: boolean, children: string[] }} Box
  * @typedef {{ url: string, viewport: { w: number, h: number }, rootFontSize: number, dir: string, pageScroll: { sw: number, cw: number }, elements: Box[] }} Snapshot
  * @typedef {{ severity: 'S1' | 'S2' | 'S3' | 'S4', rule: string, path: string, measured: string, expected: string, fix: string }} Finding
  */
@@ -43,6 +44,7 @@ import { readFileSync } from 'node:fs';
 export function collect(options = {}) {
   const rootSel = options.root || 'body';
   const ignore = options.ignore || '';
+  const bleed = options.bleed || '';
   const root = document.querySelector(rootSel);
   if (!root) throw new Error(`spacing probe: no element matches ${rootSel}`);
   const px = (v) => parseFloat(v) || 0;
@@ -140,8 +142,15 @@ export function collect(options = {}) {
       centred: ml > 0 && Math.abs(ml - mr) < 0.5 && !!parentEl && getComputedStyle(parentEl).display === 'block',
       ellipsis: cs.textOverflow === 'ellipsis',
       spread: /space-(between|around|evenly)/.test(cs.justifyContent),
-      clip: overflowing ? { sw: el.scrollWidth, sh: el.scrollHeight, cw: el.clientWidth, ch: el.clientHeight } : null,
+      // cx, cy: where the clip rect starts (border, and a scrollbar on the start side); st, sl: scroll position;
+      // m: overflow-clip-margin, which lets a ring or shadow paint past an overflow: clip edge.
+      clip: overflowing ? {
+        sw: el.scrollWidth, sh: el.scrollHeight, cw: el.clientWidth, ch: el.clientHeight, cx: el.clientLeft, cy: el.clientTop,
+        st: el.scrollTop, sl: el.scrollLeft, m: cs.overflowX === 'clip' || cs.overflowY === 'clip' ? px(cs.overflowClipMargin) : 0,
+      } : null,
       scrolls,
+      scrollsY: /(auto|scroll)/.test(cs.overflowY),
+      ...(bleed && el.matches(bleed) ? { bleed: true } : {}),
       children: [],
     };
     out.push(box);
@@ -210,11 +219,14 @@ const FIX = {
   'spacing-changed': "A rule keyed to sibling position or to a state changes this box's spacing; make it the parent's gap and padding, or reserve it at rest (layout or component)",
   'not-mirrored': 'Replace the physical property (left, right) with its logical one (inline-start, inline-end) in the component',
   'nested-enclosure': "The group's members use the bare variant: no border, fill or shadow at rest; hover, selection, focus and drop-target cues only in their state rules (component)",
+  'ring-clipped': "Pad inside the overflow container by at least the focus ring's width plus offset (tokens), or use overflow: clip with overflow-clip-margin; never overflow: hidden flush around controls (layout)",
+  'scroll-inset': "Move the padding off the wrappers around the scroll region onto the content inside it, so the region reaches its surface's edges (layout)",
+  'padded-surface': 'Remove the all-around padding from the visible surface; pad its regions one or two levels below, and let the child that bleeds sit outside them (layout)',
 };
 
 const fmt = (n) => `${Math.round(n * 10) / 10}px`;
 
-/** Findings for one snapshot. options: base (px at a 16 px root, default 4), allow (extra px values), target (px; adds S2 below it). */
+/** Findings for one snapshot. options: base (px at a 16 px root, default 4), allow (extra px values), target (px; adds S2 below it), ring (px: the focus ring's width plus offset; adds ring-clipped). */
 export function analyze(/** @type {Snapshot} */ snap, options = {}) {
   const base = (options.base ?? 4) * (snap.rootFontSize || 16) / 16;
   const allow = new Set((options.allow ?? [1]).map(Number));
@@ -378,6 +390,85 @@ export function analyze(/** @type {Snapshot} */ snap, options = {}) {
       add(conflict ? 'S1' : 'S2', 'target-size', t, `${fmt(t.rect.w)} × ${fmt(t.rect.h)}${conflict ? ', too close to another target' : ''}`, '≥ 24px × 24px');
     } else if (options.target && (t.rect.w < options.target - tol || t.rect.h < options.target - tol)) add('S2', 'below-target', t, `${fmt(t.rect.w)} × ${fmt(t.rect.h)}`, `≥ ${fmt(options.target)} (the project's target size)`);
   }
+
+  const up = (e) => (e.parent !== null ? byId.get(e.parent) : undefined);
+  const last = (e) => e.path.split(' > ').pop();
+
+  // Focus rings: a visible control's ring, its box grown by options.ring, lies inside its nearest clipping ancestor's
+  // clip rect. On an axis that scrolls, an edge counts only when scrolled to it; a control partly scrolled out is skipped.
+  const ring = options.ring ?? 0;
+  if (ring > 0) {
+    for (const t of snap.elements) {
+      if (!t.interactive || t.ignored || t.outOfFlow || t.rect.w <= 1 || t.rect.h <= 1) continue;
+      let a = up(t);
+      while (a && !a.clip) a = up(a);
+      if (!a || a.ignored) continue;
+      const c = a.clip;
+      const m = c.m ?? 0;
+      const left = a.rect.x + (c.cx ?? a.border.l);
+      const top = a.rect.y + (c.cy ?? a.border.t);
+      const clipRect = { l: left - m, t: top - m, r: left + c.cw + m, b: top + c.ch + m };
+      const r = t.rect;
+      if (r.x < clipRect.l - tol || r.y < clipRect.t - tol || r.x + r.w > clipRect.r + tol || r.y + r.h > clipRect.b + tol) continue;
+      const scrollsX = a.scrolls && c.sw > c.cw + 1;
+      const scrollsY = a.scrolls && c.sh > c.ch + 1;
+      const atInlineStart = Math.abs(c.sl ?? 0) <= 1;
+      const atInlineEnd = Math.abs(c.sl ?? 0) + c.cw >= c.sw - 1;
+      const rtl = snap.dir === 'rtl';
+      const counts = {
+        t: !scrollsY || (c.st ?? 0) <= 1,
+        b: !scrollsY || (c.st ?? 0) + c.ch >= c.sh - 1,
+        l: !scrollsX || (rtl ? atInlineEnd : atInlineStart),
+        r: !scrollsX || (rtl ? atInlineStart : atInlineEnd),
+      };
+      const cut = { t: clipRect.t - (r.y - ring), b: r.y + r.h + ring - clipRect.b, l: clipRect.l - (r.x - ring), r: r.x + r.w + ring - clipRect.r };
+      const sides = /** @type {const} */ (['t', 'r', 'b', 'l']).filter((s) => counts[s] && cut[s] > tol);
+      if (sides.length) add('S1', 'ring-clipped', t, `ring cut ${sides.map((s) => `${fmt(cut[s])} ${{ t: 'top', r: 'right', b: 'bottom', l: 'left' }[s]}`).join(', ')} by ${last(a)}`, `≥ ${fmt(ring)} clear inside the clip`);
+    }
+  }
+
+  for (const e of snap.elements) {
+    if (e.ignored || e.parent === null) continue;
+
+    // A scroll region bleeds to its surface's edges: no wrapper's padding between it and the surface's inline-end
+    // or block-end edge, so the scrollbar sits at the edge and content scrolls to the bottom.
+    if ((e.scrollsY ?? e.scrolls) && e.clip && !e.interactive && e.children.length) {
+      const chain = [];
+      for (let a = up(e); a; a = up(a)) {
+        chain.push(a);
+        if (a.enclosed) break;
+      }
+      const surface = chain.at(-1);
+      if (surface && surface.enclosed) {
+        const inlineEnd = snap.dir === 'rtl' ? 'l' : 'r';
+        const s = surface.rect;
+        const d = {
+          [inlineEnd]: inlineEnd === 'r' ? s.x + s.w - surface.border.r - (e.rect.x + e.rect.w) : e.rect.x - (s.x + surface.border.l),
+          b: s.y + s.h - surface.border.b - (e.rect.y + e.rect.h),
+        };
+        const off = Object.entries(d).filter(([side, v]) => {
+          const pad = chain.reduce((n, a) => n + a.pad[side], 0);
+          return v > 1 && pad > tol && v <= pad + 1;
+        });
+        if (off.length) add('S2', 'scroll-inset', e, off.map(([side, v]) => `${side === 'b' ? 'bottom' : 'scrollbar edge'} ${fmt(v)} inside ${last(surface)}`).join(', '), "0: the region reaches the surface's edge; padding goes on its content");
+      }
+    }
+
+    // A visible surface padded all around blocks a child that must bleed (a divider, an edge-to-edge row, media).
+    if (e.enclosed && e.children.length && ['t', 'r', 'b', 'l'].every((s) => e.pad[s] > tol)) {
+      /** @type {Box | undefined} */
+      let found;
+      const walk = (x) => {
+        for (const k of kids(x)) {
+          if (found) return;
+          if (k.bleed && !k.ignored) found = k;
+          else if (!k.enclosed) walk(k);
+        }
+      };
+      walk(e);
+      if (found) add('S2', 'padded-surface', e, `padding ${fmt(e.pad.t)} ${fmt(e.pad.r)} ${fmt(e.pad.b)} ${fmt(e.pad.l)} all around; ${last(found)} must bleed`, 'no padding on the surface; its regions carry it');
+    }
+  }
   return dedupe(out);
 }
 
@@ -482,7 +573,7 @@ export function report(/** @type {Finding[]} */ findings, title = 'Spacing audit
 }
 
 function main(argv) {
-  const opts = { base: 4, allow: [1], target: 0, title: 'Spacing audit' };
+  const opts = { base: 4, allow: [1], target: 0, ring: 0, title: 'Spacing audit' };
   let file = '';
   let other = '';
   let rtl = '';
@@ -492,11 +583,12 @@ function main(argv) {
     else if (argv[i] === '--base') opts.base = Number(argv[++i]);
     else if (argv[i] === '--allow') opts.allow = argv[++i].split(',').map(Number);
     else if (argv[i] === '--target') opts.target = Number(argv[++i]);
+    else if (argv[i] === '--ring') opts.ring = Number(argv[++i]);
     else if (argv[i] === '--title') opts.title = argv[++i];
     else file = argv[i];
   }
   if (!file) {
-    console.error('Usage: node spacing-probe.mjs <snapshot.json> [--compare <after.json> | --mirror <rtl.json>] [--base 4] [--allow 1,2] [--target 44] [--title "…"]');
+    console.error('Usage: node spacing-probe.mjs <snapshot.json> [--compare <after.json> | --mirror <rtl.json>] [--base 4] [--allow 1,2] [--target 44] [--ring 4] [--title "…"]');
     return 2;
   }
   const snap = JSON.parse(readFileSync(file, 'utf8'));

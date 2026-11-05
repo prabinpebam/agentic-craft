@@ -291,7 +291,7 @@ test('product reasoning only: no execution-control skills, agents, templates or 
 test('spacing keeps its rules and references, its tokens hold the ratios, and its neighbours point to it', () => {
   const dir = join(ROOT, 'skills', 'spacing');
   const skill = readFileSync(join(dir, 'SKILL.md'), 'utf8');
-  for (const rule of [/Inner space never exceeds outer space/, /at least twice/, /never less than 1\.5 times/, /a heading belongs to what follows/i, /Insets stay constant; nesting doesn't escalate/, /The layout owns space/, /`:last-child`/, /tooltip appended to a dialog/, /4 px base unit/, /Measure space to what the eye sees/, /24 × 24 CSS px/, /Geometry is stable/, /Logical, not physical/, /Density is a context/, /320 CSS px/])
+  for (const rule of [/Inner space never exceeds outer space/, /at least twice/, /never less than 1\.5 times/, /a heading belongs to what follows/i, /Insets stay constant; nesting doesn't escalate/, /The layout owns space/, /`:last-child`/, /tooltip appended to a dialog/, /4 px base unit/, /Measure space to what the eye sees/, /24 × 24 CSS px/, /Geometry is stable/, /Logical, not physical/, /Density is a context/, /320 CSS px/, /Pad the right level; never clip a focus ring/])
     assert.match(skill, rule, `spacing keeps ${rule}`);
   for (const part of ['## Choosing a value', '## Rules by element', '## Never', '## The audit', '## Enforcement', '## Review checklist', 'S1 Broken', 'S2 Misgrouped', 'S3 Fragile', 'S4 Polish'])
     assert.ok(skill.includes(part), `SKILL.md has ${part}`);
@@ -482,4 +482,43 @@ test('the spacing probe skips what is visually hidden and sees ::before and ::af
   } finally {
     Object.assign(globalThis, saved);
   }
+});
+test('the spacing probe finds clipped focus rings, scroll regions kept off their surface edge, and padded surfaces that block a bleed', () => {
+  const sides = (t = 0, r = t, b = t, l = r) => ({ t, r, b, l });
+  const box = (id, parent, x, y, w, h, extra = {}) => ({ id, parent, path: extra.path ?? `div:${id}`, tag: 'div', rect: { x, y, w, h }, display: 'flex', flow: 'column', pad: sides(), mar: sides(), border: sides(), gap: { row: 0, col: 0 }, lineHeight: 20, fontSize: 16, interactive: false, enclosed: false, heading: 0, outOfFlow: false, ignored: false, inlineText: false, centred: false, ellipsis: false, clip: null, scrolls: false, children: [], ...extra });
+  const scroller = (cw, ch, st = 0) => ({ sw: cw, sh: 900, cw, ch, cx: 0, cy: 0, st, sl: 0, m: 0 });
+  const snap = (elements) => ({ url: 'x', viewport: { w: 800, h: 600 }, rootFontSize: 16, dir: 'ltr', pageScroll: { sw: 800, cw: 800 }, elements });
+  const rules = (s) => analyze(s, { ring: 4 }).filter((f) => ['ring-clipped', 'scroll-inset', 'padded-surface'].includes(f.rule)).map((f) => `${f.severity} ${f.rule} ${f.path}`);
+  // Bad: the dialog is padded all around, so the divider can't bleed, the scroll region stops 24 px short of the
+  // dialog's right and bottom edges, and a field flush with the region's start edge loses its ring on the left.
+  const bad = snap([
+    box('p', null, 0, 0, 800, 600, { children: ['d'] }),
+    box('d', 'p', 100, 50, 600, 500, { enclosed: true, pad: sides(24), children: ['h', 'hr', 'c'], path: 'dialog' }),
+    box('h', 'd', 124, 74, 552, 40),
+    box('hr', 'd', 124, 114, 552, 1, { tag: 'hr', bleed: true, path: 'divider' }),
+    box('c', 'd', 124, 115, 552, 411, { scrolls: true, scrollsY: true, clip: scroller(552, 411), children: ['i'], path: 'body' }),
+    box('i', 'c', 124, 131, 200, 32, { tag: 'input', interactive: true, path: 'input' }),
+  ]);
+  assert.deepEqual(rules(bad).sort(), ['S1 ring-clipped input', 'S2 padded-surface dialog', 'S2 scroll-inset body']);
+  assert.match(analyze(bad, { ring: 4 }).find((f) => f.rule === 'ring-clipped').measured, /4px left by body/);
+  // Good: the header and the scroll content carry the padding; the divider and the scroll region reach the edges.
+  const good = snap([
+    box('p', null, 0, 0, 800, 600, { children: ['d'] }),
+    box('d', 'p', 100, 50, 600, 500, { enclosed: true, children: ['h', 'hr', 'c'], path: 'dialog' }),
+    box('h', 'd', 100, 50, 600, 72, { pad: sides(24) }),
+    box('hr', 'd', 100, 122, 600, 1, { tag: 'hr', bleed: true }),
+    box('c', 'd', 100, 123, 600, 427, { scrolls: true, scrollsY: true, clip: scroller(600, 427), children: ['k'], path: 'body' }),
+    box('k', 'c', 100, 123, 600, 900, { pad: sides(24), children: ['i'] }),
+    box('i', 'k', 124, 147, 200, 32, { tag: 'input', interactive: true }),
+  ]);
+  assert.deepEqual(rules(good), []);
+  // A field at the region's bottom edge mid-scroll is only scrolled there; overflow: clip with a margin keeps a flush ring.
+  const midScroll = structuredClone(good);
+  midScroll.elements[4].clip.st = 200;
+  midScroll.elements[6].rect.y = 550 - 32;
+  assert.deepEqual(rules(midScroll), [], 'an edge on a scrolling axis counts only when scrolled to it');
+  const clipMargin = structuredClone(bad);
+  Object.assign(clipMargin.elements[4], { scrolls: false, scrollsY: false, clip: { sw: 552, sh: 411, cw: 552, ch: 411, cx: 0, cy: 0, st: 0, sl: 0, m: 4 } });
+  assert.deepEqual(rules(clipMargin).filter((r) => /ring/.test(r)), [], 'overflow-clip-margin covers the ring');
+  assert.deepEqual(analyze(bad).filter((f) => f.rule === 'ring-clipped'), [], 'the ring check needs the ring size');
 });
