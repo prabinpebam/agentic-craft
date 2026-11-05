@@ -331,6 +331,8 @@ test('visual-noise keeps its rules, checks and references, and its neighbours an
   const spacing = readFileSync(join(ROOT, 'skills', 'spacing', 'SKILL.md'), 'utf8');
   assert.match(spacing, /Members of an enclosed group stay bare/);
   assert.match(spacing, /Transient affordances stay transient/);
+  assert.match(spacing, /drop target gets an accent border only while a dragged item is over it/, 'spacing keeps the drop-target example');
+  assert.match(skill, /accent-colour border on the one slot that is the active drop target, only while a dragged item is over it/, 'visual-noise keeps the drop-target example');
   assert.match(readFileSync(join(ROOT, 'skills', 'spacing', 'references', 'audit.md'), 'utf8'), /`nested-enclosure` \| S2/);
   assert.match(readFileSync(join(ROOT, 'agents', 'design-system-auditor.agent.md'), 'utf8'), /`visual-noise`/);
 });

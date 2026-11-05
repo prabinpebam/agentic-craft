@@ -78,6 +78,6 @@ One table, grouped by root cause, as in the `spacing` audit:
 
 | ID | Severity | Root cause | Component or token | Instances | System-level fix |
 |---|---|---|---|---|---|
-| VN-1 | N1 | Toolbar buttons use the outlined button variant inside the enclosed toolbar | compound toolbar, its button variant | 9 buttons | The toolbar's members use the bare variant; the outline moves to the drop-target state while dragging |
+| VN-1 | N1 | Toolbar buttons use the outlined button variant inside the enclosed toolbar | compound toolbar, its button variant | 9 buttons | The toolbar's members use the bare variant; an accent border appears only on the active drop target while a dragged item is over it |
 
 Then the findings, one line each: check, where (view, state, context), measured, threshold. End with the test that keeps each class fixed (the probe on the library, the snippet's thresholds in a browser test).
